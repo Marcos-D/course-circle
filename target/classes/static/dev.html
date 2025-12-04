@@ -1,0 +1,239 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CourseCircle Demo</title>
+  <style>
+    :root { --card:#fff; --border:#e1e4ea; --accent:#0d6efd; --text:#222; --muted:#555; --bg:#f6f7fb; }
+    body { font-family: "Segoe UI", Arial, sans-serif; background: var(--bg); color: var(--text); margin: 24px; }
+    h1 { margin-bottom: 8px; }
+    p.desc { color: var(--muted); margin-top: 0; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 16px 0 24px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+    .card h2 { margin: 0 0 8px; font-size: 18px; }
+    label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+    input[type="number"], input[type="text"] { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; }
+    button { background: var(--accent); color: #fff; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+    button:hover { filter: brightness(0.95); }
+    .muted { color: var(--muted); font-size: 13px; }
+    pre { background: #0f172a; color: #e2e8f0; padding: 16px; border-radius: 8px; max-height: 320px; overflow: auto; font-size: 13px; }
+    .log-title { display: flex; align-items: center; justify-content: space-between; margin-top: 0; }
+    .log-title button { background: #334155; padding: 6px 10px; }
+  </style>
+</head>
+<body>
+  <h1>CourseCircle Demo</h1>
+  <p class="desc">Minimal UI to exercise the backend APIs. Provide IDs from your database (e.g., course IDs) and watch responses below.</p>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Health</h2>
+      <p class="muted">Ping the service.</p>
+      <button id="btn-health">GET /api/health</button>
+    </div>
+
+    <div class="card">
+      <h2>Courses</h2>
+      <p class="muted">Fetch or create courses.</p>
+      <div class="stack">
+        <button id="btn-courses">GET /api/courses</button>
+      </div>
+      <div style="margin-top:12px;">
+        <label>Code</label>
+        <input id="courseCode" type="text" placeholder="e.g. CSDSA" />
+        <label>Name</label>
+        <input id="courseName" type="text" placeholder="Data Structures & Algorithms" />
+        <label>Term</label>
+        <input id="courseTerm" type="text" placeholder="Fall 2025" />
+        <label>School ID (optional)</label>
+        <input id="courseSchoolId" type="number" placeholder="e.g. 1" />
+        <button id="btn-create-course" style="margin-top:8px;">POST /api/courses</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Users</h2>
+      <p class="muted">Create a user (needed because CurrentUserService returns user id 1).</p>
+      <div class="stack">
+        <button id="btn-users">GET /api/users</button>
+      </div>
+      <div style="margin-top:12px;">
+        <label>Email</label>
+        <input id="userEmail" type="email" placeholder="student@example.edu" />
+        <label>Display name</label>
+        <input id="userDisplay" type="text" placeholder="Sample Student" />
+        <label>School ID (optional)</label>
+        <input id="userSchoolId" type="number" placeholder="e.g. 1" />
+        <button id="btn-create-user" style="margin-top:8px;">POST /api/users</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Sessions</h2>
+      <p class="muted">Inspect session history and totals.</p>
+      <div class="stack">
+        <button id="btn-sessions">GET /api/sessions</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Start Session</h2>
+      <label for="courseIdStart">Course ID</label>
+      <input id="courseIdStart" type="number" placeholder="e.g. 1" />
+      <button id="btn-start">POST /api/sessions</button>
+    </div>
+
+    <div class="card">
+      <h2>End Session</h2>
+      <label for="sessionIdEnd">Session ID</label>
+      <input id="sessionIdEnd" type="number" placeholder="session id" />
+      <button id="btn-end">PATCH /api/sessions/{id}/end</button>
+    </div>
+
+    <div class="card">
+      <h2>List Files</h2>
+      <label for="courseIdList">Course ID</label>
+      <input id="courseIdList" type="number" placeholder="e.g. 1" />
+      <button id="btn-list">GET /api/courses/{courseId}/files</button>
+    </div>
+
+    <div class="card">
+      <h2>Upload File</h2>
+      <label for="courseIdUpload">Course ID</label>
+      <input id="courseIdUpload" type="number" placeholder="e.g. 1" />
+      <label for="fileUpload">File</label>
+      <input id="fileUpload" type="file" />
+      <button id="btn-upload">POST /api/courses/{courseId}/files</button>
+      <p class="muted">Uploads are stored to the configured storage dir (default ./uploads).</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="log-title">
+      <h2>Responses</h2>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <pre id="log" aria-live="polite"></pre>
+  </div>
+
+<script>
+  const logBox = document.getElementById('log');
+
+  function appendLog(label, payload) {
+    const timestamp = new Date().toLocaleTimeString();
+    const body = payload !== undefined ? JSON.stringify(payload, null, 2) : '';
+    logBox.textContent += `[${timestamp}] ${label}\n${body}\n\n`;
+    logBox.scrollTop = logBox.scrollHeight;
+  }
+
+  async function callApi(path, options) {
+    try {
+      const res = await fetch(path, options);
+      const contentType = res.headers.get('content-type') || '';
+      const body = contentType.includes('application/json') ? await res.json() : await res.text();
+      appendLog(`${options?.method || 'GET'} ${path} (${res.status})`, body);
+      return { ok: res.ok, status: res.status, body };
+    } catch (err) {
+      appendLog(`${options?.method || 'GET'} ${path} (error)`, err.message);
+      return { ok: false, status: 0, body: err.message };
+    }
+  }
+
+  document.getElementById('btn-health').addEventListener('click', () => callApi('/api/health'));
+  document.getElementById('btn-courses').addEventListener('click', () => callApi('/api/courses'));
+  document.getElementById('btn-create-course').addEventListener('click', async () => {
+    const code = document.getElementById('courseCode').value.trim();
+    const name = document.getElementById('courseName').value.trim();
+    const term = document.getElementById('courseTerm').value.trim();
+    const schoolIdRaw = document.getElementById('courseSchoolId').value;
+    const schoolId = schoolIdRaw ? Number(schoolIdRaw) : null;
+
+    if (!code || !name) {
+      appendLog('createCourse', 'Code and name are required');
+      return;
+    }
+
+    await callApi('/api/courses', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, name, term: term || null, schoolId })
+    });
+  });
+
+  document.getElementById('btn-users').addEventListener('click', () => callApi('/api/users'));
+  document.getElementById('btn-create-user').addEventListener('click', async () => {
+    const email = document.getElementById('userEmail').value.trim();
+    const displayName = document.getElementById('userDisplay').value.trim();
+    const schoolIdRaw = document.getElementById('userSchoolId').value;
+    const schoolId = schoolIdRaw ? Number(schoolIdRaw) : null;
+
+    if (!email || !displayName) {
+      appendLog('createUser', 'Email and display name are required');
+      return;
+    }
+
+    await callApi('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, displayName, schoolId })
+    });
+  });
+
+  document.getElementById('btn-sessions').addEventListener('click', () => callApi('/api/sessions'));
+
+  document.getElementById('btn-start').addEventListener('click', async () => {
+    const courseId = Number(document.getElementById('courseIdStart').value);
+    if (!courseId) {
+      appendLog('startSession', 'Provide a course ID');
+      return;
+    }
+    await callApi('/api/sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ courseId })
+    });
+  });
+
+  document.getElementById('btn-end').addEventListener('click', async () => {
+    const sessionId = Number(document.getElementById('sessionIdEnd').value);
+    if (!sessionId) {
+      appendLog('endSession', 'Provide a session ID');
+      return;
+    }
+    await callApi(`/api/sessions/${sessionId}/end`, { method: 'PATCH' });
+  });
+
+  document.getElementById('btn-list').addEventListener('click', async () => {
+    const courseId = Number(document.getElementById('courseIdList').value);
+    if (!courseId) {
+      appendLog('listFiles', 'Provide a course ID');
+      return;
+    }
+    await callApi(`/api/courses/${courseId}/files`);
+  });
+
+  document.getElementById('btn-upload').addEventListener('click', async () => {
+    const courseId = Number(document.getElementById('courseIdUpload').value);
+    const fileInput = document.getElementById('fileUpload');
+    if (!courseId) {
+      appendLog('uploadFile', 'Provide a course ID');
+      return;
+    }
+    if (!fileInput.files.length) {
+      appendLog('uploadFile', 'Choose a file');
+      return;
+    }
+    const form = new FormData();
+    form.append('file', fileInput.files[0]);
+    await callApi(`/api/courses/${courseId}/files`, {
+      method: 'POST',
+      body: form
+    });
+  });
+
+  document.getElementById('btn-clear').addEventListener('click', () => {
+    logBox.textContent = '';
+  });
+</script>
+</body>
+</html>

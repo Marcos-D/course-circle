@@ -1,0 +1,222 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CourseCircle Student</title>
+  <style>
+    :root { --bg:#f7f8fb; --panel:#fff; --border:#e1e4ea; --accent:#0d6efd; --muted:#667085; --text:#1f2933; }
+    body { margin:0; font-family: "Segoe UI", Arial, sans-serif; background:var(--bg); color:var(--text); }
+    header { padding:20px 24px; background:linear-gradient(135deg, #0d6efd, #3e8aff); color:#fff; }
+    header h1 { margin:0 0 6px; }
+    header p { margin:0; color:#e7edff; }
+    main { max-width:900px; margin: -32px auto 32px; padding:0 16px; }
+    .card { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,0.05); }
+    .stack { display:flex; gap:16px; flex-wrap:wrap; }
+    .field { flex:1; min-width:220px; }
+    label { display:block; font-size:13px; color:var(--muted); margin-bottom:6px; }
+    input[type="text"], input[type="number"] { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px; }
+    button.primary { background:var(--accent); color:#fff; border:none; padding:12px 16px; border-radius:10px; font-weight:700; cursor:pointer; box-shadow:0 6px 14px rgba(13,110,253,0.3); }
+    button.secondary { background:#eef2ff; color:#1d3b8b; border:none; padding:12px 16px; border-radius:10px; font-weight:700; cursor:pointer; }
+    button:disabled { opacity:0.6; cursor:not-allowed; box-shadow:none; }
+    .timer { font-size:36px; font-weight:700; letter-spacing:1px; margin:12px 0; }
+    .muted { color:var(--muted); font-size:13px; }
+    .log { margin-top:20px; background:#0f172a; color:#e2e8f0; padding:14px; border-radius:10px; min-height:160px; white-space:pre-wrap; overflow:auto; font-size:13px; }
+    .section { margin-top:16px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>CourseCircle — Student</h1>
+    <p>Start a study session, track time, and upload notes.</p>
+  </header>
+
+  <main>
+    <div class="card">
+      <div class="stack">
+        <div class="field">
+          <label for="courseId">Current course ID</label>
+          <input id="courseId" type="number" placeholder="e.g. 1" />
+        </div>
+        <div class="field">
+          <label for="courseName">Course name (optional label)</label>
+          <input id="courseName" type="text" placeholder="Intro to Biology" />
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="muted">Session controls</div>
+        <div class="timer" id="timer">00:00:00</div>
+        <div class="stack">
+          <button class="primary" id="btn-start">Start studying</button>
+          <button class="secondary" id="btn-end" disabled>End session</button>
+        </div>
+        <p class="muted" id="sessionStatus">No active session.</p>
+      </div>
+
+      <div class="section">
+        <div class="muted">Upload notes / slides</div>
+        <div class="stack">
+          <input type="file" id="fileInput" />
+          <button class="secondary" id="btn-upload">Upload</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="muted">Attention tracking</div>
+        <p class="muted">We log focus/blur or visibility changes below so you can spot context switches.</p>
+      </div>
+
+      <div class="log" id="log"></div>
+    </div>
+  </main>
+
+<script>
+  const timerEl = document.getElementById('timer');
+  const statusEl = document.getElementById('sessionStatus');
+  const logEl = document.getElementById('log');
+  let timerInterval = null;
+  let startTime = null;
+  let accumulatedMs = 0;
+  let activeSessionId = null;
+
+  function log(message, data) {
+    const ts = new Date().toLocaleTimeString();
+    const line = data !== undefined ? `${message} ${JSON.stringify(data)}` : message;
+    logEl.textContent += `[${ts}] ${line}\n`;
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function formatDuration(ms) {
+    const totalSeconds = Math.floor(ms / 1000);
+    const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+    const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+    const seconds = String(totalSeconds % 60).padStart(2, '0');
+    return `${hours}:${minutes}:${seconds}`;
+  }
+
+  function startTimer() {
+    startTime = Date.now();
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      const elapsed = accumulatedMs + (Date.now() - startTime);
+      timerEl.textContent = formatDuration(elapsed);
+    }, 1000);
+  }
+
+  function stopTimer() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+
+  function pauseTimer() {
+    if (timerInterval && startTime) {
+      accumulatedMs += Date.now() - startTime;
+      stopTimer();
+    }
+  }
+
+  function resumeTimerIfActive() {
+    if (activeSessionId) {
+      startTime = Date.now();
+      startTimer();
+    }
+  }
+
+  async function callApi(path, options) {
+    try {
+      const res = await fetch(path, options);
+      const contentType = res.headers.get('content-type') || '';
+      const body = contentType.includes('application/json') ? await res.json() : await res.text();
+      log(`${options?.method || 'GET'} ${path} (${res.status})`, body);
+      return { ok: res.ok, status: res.status, body };
+    } catch (err) {
+      log(`${options?.method || 'GET'} ${path} (error)`, err.message);
+      return { ok: false, status: 0, body: err.message };
+    }
+  }
+
+  document.getElementById('btn-start').addEventListener('click', async () => {
+    const courseId = Number(document.getElementById('courseId').value);
+    if (!courseId) {
+      log('startSession', 'Provide a course ID');
+      return;
+    }
+    const resp = await callApi('/api/sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ courseId })
+    });
+    if (resp.ok) {
+      activeSessionId = resp.body.id;
+      statusEl.textContent = `Active session for course ${courseId} (id ${activeSessionId})`;
+      document.getElementById('btn-start').disabled = true;
+      document.getElementById('btn-end').disabled = false;
+      accumulatedMs = 0;
+      startTimer();
+    }
+  });
+
+  document.getElementById('btn-end').addEventListener('click', async () => {
+    if (!activeSessionId) {
+      log('endSession', 'No active session to end');
+      return;
+    }
+    const resp = await callApi(`/api/sessions/${activeSessionId}/end`, { method: 'PATCH' });
+    if (resp.ok) {
+      statusEl.textContent = 'No active session.';
+      document.getElementById('btn-start').disabled = false;
+      document.getElementById('btn-end').disabled = true;
+      accumulatedMs = 0;
+      stopTimer();
+      timerEl.textContent = '00:00:00';
+      activeSessionId = null;
+    }
+  });
+
+  document.getElementById('btn-upload').addEventListener('click', async () => {
+    const courseId = Number(document.getElementById('courseId').value);
+    const fileInput = document.getElementById('fileInput');
+    if (!courseId) {
+      log('uploadFile', 'Provide a course ID');
+      return;
+    }
+    if (!fileInput.files.length) {
+      log('uploadFile', 'Choose a file first');
+      return;
+    }
+    const form = new FormData();
+    form.append('file', fileInput.files[0]);
+    await callApi(`/api/courses/${courseId}/files`, {
+      method: 'POST',
+      body: form
+    });
+  });
+
+  function handleVisibilityChange() {
+    const state = document.visibilityState;
+    log('visibilitychange', state);
+    if (state === 'hidden') {
+      pauseTimer();
+    } else if (state === 'visible') {
+      resumeTimerIfActive();
+    }
+  }
+
+  function handleFocus() {
+    log('focus');
+    resumeTimerIfActive();
+  }
+
+  function handleBlur() {
+    log('blur');
+    pauseTimer();
+  }
+
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  window.addEventListener('focus', handleFocus);
+  window.addEventListener('blur', handleBlur);
+
+  log('Student dashboard loaded. Provide a course ID to begin.');
+</script>
+</body>
+</html>
