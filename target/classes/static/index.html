@@ -14,7 +14,7 @@
     .stack { display:flex; gap:16px; flex-wrap:wrap; }
     .field { flex:1; min-width:220px; }
     label { display:block; font-size:13px; color:var(--muted); margin-bottom:6px; }
-    input[type="text"], input[type="number"] { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px; }
+    input[type="text"], input[type="number"], input[type="email"], input[type="password"] { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px; background:#fafbff; }
     button.primary { background:var(--accent); color:#fff; border:none; padding:12px 16px; border-radius:10px; font-weight:700; cursor:pointer; box-shadow:0 6px 14px rgba(13,110,253,0.3); }
     button.secondary { background:#eef2ff; color:#1d3b8b; border:none; padding:12px 16px; border-radius:10px; font-weight:700; cursor:pointer; }
     button:disabled { opacity:0.6; cursor:not-allowed; box-shadow:none; }
@@ -22,6 +22,9 @@
     .muted { color:var(--muted); font-size:13px; }
     .log { margin-top:20px; background:#0f172a; color:#e2e8f0; padding:14px; border-radius:10px; min-height:160px; white-space:pre-wrap; overflow:auto; font-size:13px; }
     .section { margin-top:16px; }
+    .account { background:linear-gradient(135deg, #f0f4ff, #f7f9ff); border:1px solid #d8def0; border-radius:12px; padding:14px; box-shadow:0 6px 18px rgba(13,110,253,0.08); }
+    .account .muted { font-weight:600; letter-spacing:0.2px; color:#1d3b8b; }
+    .pill { border-radius:999px; padding:10px 16px; }
   </style>
 </head>
 <body>
@@ -32,6 +35,30 @@
 
   <main>
     <div class="card">
+      <div class="section account">
+        <div class="muted">Account</div>
+        <div class="stack">
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" type="email" placeholder="student@example.edu" />
+          </div>
+          <div class="field">
+            <label for="displayName">Display name</label>
+            <input id="displayName" type="text" placeholder="Sample Student" />
+          </div>
+          <div class="field">
+            <label for="password">Password</label>
+            <input id="password" type="password" placeholder="Choose a password" />
+          </div>
+        </div>
+        <div class="stack" style="margin-top:8px;">
+          <button class="secondary pill" id="btn-register">Register</button>
+          <button class="secondary pill" id="btn-login">Login</button>
+          <button class="secondary pill" id="btn-logout">Logout</button>
+        </div>
+        <p class="muted" id="authStatus">Not authenticated.</p>
+      </div>
+
       <div class="stack">
         <div class="field">
           <label for="courseId">Current course ID</label>
@@ -78,6 +105,9 @@
   let startTime = null;
   let accumulatedMs = 0;
   let activeSessionId = null;
+  let authToken = localStorage.getItem('cc_jwt') || null;
+
+  updateAuthStatus();
 
   function log(message, data) {
     const ts = new Date().toLocaleTimeString();
@@ -124,7 +154,11 @@
 
   async function callApi(path, options) {
     try {
-      const res = await fetch(path, options);
+      const headers = options?.headers ? { ...options.headers } : {};
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+      const res = await fetch(path, options ? { ...options, headers } : { headers });
       const contentType = res.headers.get('content-type') || '';
       const body = contentType.includes('application/json') ? await res.json() : await res.text();
       log(`${options?.method || 'GET'} ${path} (${res.status})`, body);
@@ -132,6 +166,14 @@
     } catch (err) {
       log(`${options?.method || 'GET'} ${path} (error)`, err.message);
       return { ok: false, status: 0, body: err.message };
+    }
+  }
+
+  function updateAuthStatus() {
+    if (authToken) {
+      document.getElementById('authStatus').textContent = 'Authenticated (token stored locally).';
+    } else {
+      document.getElementById('authStatus').textContent = 'Not authenticated.';
     }
   }
 
@@ -211,6 +253,52 @@
     log('blur');
     pauseTimer();
   }
+
+  document.getElementById('btn-register').addEventListener('click', async () => {
+    const email = document.getElementById('email').value.trim();
+    const displayName = document.getElementById('displayName').value.trim();
+    const password = document.getElementById('password').value;
+    if (!email || !password || !displayName) {
+      log('register', 'Email, display name, and password are required');
+      return;
+    }
+    const resp = await callApi('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, displayName, role: 'STUDENT' })
+    });
+    if (resp.ok && resp.body.token) {
+      authToken = resp.body.token;
+      localStorage.setItem('cc_jwt', authToken);
+      updateAuthStatus();
+    }
+  });
+
+  document.getElementById('btn-login').addEventListener('click', async () => {
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    if (!email || !password) {
+      log('login', 'Email and password are required');
+      return;
+    }
+    const resp = await callApi('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    if (resp.ok && resp.body.token) {
+      authToken = resp.body.token;
+      localStorage.setItem('cc_jwt', authToken);
+      updateAuthStatus();
+    }
+  });
+
+  document.getElementById('btn-logout').addEventListener('click', () => {
+    authToken = null;
+    localStorage.removeItem('cc_jwt');
+    updateAuthStatus();
+    log('logout', 'Token cleared locally');
+  });
 
   document.addEventListener('visibilitychange', handleVisibilityChange);
   window.addEventListener('focus', handleFocus);
