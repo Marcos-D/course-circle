@@ -51,7 +51,7 @@ class SessionServiceTest {
 
     @Test
     void startSession_throwsWhenActiveSessionExists() {
-        CurrentUser currentUser = new CurrentUser(1L, "a@b.com", "Test User", null);
+        CurrentUser currentUser = new CurrentUser(1L, "a@b.com", "Test User", null, "STUDENT");
         StartSessionRequest request = new StartSessionRequest();
         request.setCourseId(10L);
 

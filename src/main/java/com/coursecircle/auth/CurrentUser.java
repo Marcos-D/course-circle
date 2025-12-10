@@ -6,12 +6,14 @@ public class CurrentUser {
     private final String email;
     private final String displayName;
     private final Long schoolId;
+    private final String role;
 
-    public CurrentUser(Long id, String email, String displayName, Long schoolId) {
+    public CurrentUser(Long id, String email, String displayName, Long schoolId, String role) {
         this.id = id;
         this.email = email;
         this.displayName = displayName;
         this.schoolId = schoolId;
+        this.role = role;
     }
 
     public Long getId() {
@@ -28,5 +30,9 @@ public class CurrentUser {
 
     public Long getSchoolId() {
         return schoolId;
+    }
+
+    public String getRole() {
+        return role;
     }
 }

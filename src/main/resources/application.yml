@@ -11,3 +11,6 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+jwt:
+  secret: "change-me-in-prod-please-change-this-value-32bytes"

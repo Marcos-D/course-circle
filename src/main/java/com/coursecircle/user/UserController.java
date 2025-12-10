@@ -6,6 +6,7 @@ import com.coursecircle.exception.ResourceNotFoundException;
 import com.coursecircle.school.SchoolEntity;
 import com.coursecircle.school.SchoolRepository;
 import jakarta.validation.Valid;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/users")
@@ -23,10 +25,12 @@ public class UserController {
 
     private final UserRepository userRepository;
     private final SchoolRepository schoolRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserController(UserRepository userRepository, SchoolRepository schoolRepository) {
+    public UserController(UserRepository userRepository, SchoolRepository schoolRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.schoolRepository = schoolRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @GetMapping
@@ -42,6 +46,7 @@ public class UserController {
         UserEntity entity = new UserEntity();
         entity.setEmail(request.getEmail());
         entity.setDisplayName(request.getDisplayName());
+        entity.setPasswordHash(passwordEncoder.encode("temp-" + UUID.randomUUID()));
 
         if (request.getSchoolId() != null) {
             SchoolEntity school = schoolRepository.findById(request.getSchoolId())
