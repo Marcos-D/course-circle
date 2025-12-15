@@ -7,6 +7,7 @@
     :root { --bg:#f7f8fb; --panel:#fff; --border:#e1e4ea; --accent:#0d6efd; --muted:#667085; --text:#1f2933; }
     body { margin:0; font-family: "Segoe UI", Arial, sans-serif; background:var(--bg); color:var(--text); }
     header { padding:20px 24px; background:linear-gradient(135deg, #0d6efd, #3e8aff); color:#fff; }
+    .header-top { display:flex; align-items:center; justify-content:space-between; gap:12px; }
     header h1 { margin:0 0 6px; }
     header p { margin:0; color:#e7edff; }
     main { max-width:900px; margin: -32px auto 32px; padding:0 16px; }
@@ -22,41 +23,35 @@
     .muted { color:var(--muted); font-size:13px; }
     .log { margin-top:20px; background:#0f172a; color:#e2e8f0; padding:14px; border-radius:10px; min-height:160px; white-space:pre-wrap; overflow:auto; font-size:13px; }
     .section { margin-top:16px; }
-    .account { background:linear-gradient(135deg, #f0f4ff, #f7f9ff); border:1px solid #d8def0; border-radius:12px; padding:14px; box-shadow:0 6px 18px rgba(13,110,253,0.08); }
-    .account .muted { font-weight:600; letter-spacing:0.2px; color:#1d3b8b; }
     .pill { border-radius:999px; padding:10px 16px; }
+    .auth-status { display:flex; align-items:center; gap:8px; padding:10px 12px; border:1px dashed var(--border); border-radius:10px; background:#f8faff; }
+    .auth-dot { width:10px; height:10px; border-radius:50%; background:#e11d48; display:inline-block; }
+    .auth-dot.active { background:#22c55e; }
+    .modal-backdrop { position:fixed; inset:0; background:rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; z-index:999; }
+    .modal { background:#fff; border-radius:12px; padding:20px; width:100%; max-width:420px; box-shadow:0 20px 60px rgba(0,0,0,0.25); }
+    .modal h2 { margin-top:0; margin-bottom:8px; }
+    .modal .muted { margin-top:0; margin-bottom:16px; }
+    .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:16px; }
+    .hidden { display:none; }
   </style>
 </head>
 <body>
   <header>
-    <h1>CourseCircle — Student</h1>
-    <p>Start a study session, track time, and upload notes.</p>
+    <div class="header-top">
+      <div>
+        <h1>CourseCircle - Student</h1>
+        <p>Start a study session, track time, and upload notes.</p>
+      </div>
+      <button class="secondary pill" id="btn-open-auth">Login / Register</button>
+    </div>
   </header>
 
   <main>
     <div class="card">
-      <div class="section account">
-        <div class="muted">Account</div>
-        <div class="stack">
-          <div class="field">
-            <label for="email">Email</label>
-            <input id="email" type="email" placeholder="student@example.edu" />
-          </div>
-          <div class="field">
-            <label for="displayName">Display name</label>
-            <input id="displayName" type="text" placeholder="Sample Student" />
-          </div>
-          <div class="field">
-            <label for="password">Password</label>
-            <input id="password" type="password" placeholder="Choose a password" />
-          </div>
-        </div>
-        <div class="stack" style="margin-top:8px;">
-          <button class="secondary pill" id="btn-register">Register</button>
-          <button class="secondary pill" id="btn-login">Login</button>
-          <button class="secondary pill" id="btn-logout">Logout</button>
-        </div>
-        <p class="muted" id="authStatus">Not authenticated.</p>
+      <div class="auth-status">
+        <span class="auth-dot" id="authDot"></span>
+        <span id="authStatus">Not authenticated.</span>
+        <button class="secondary pill" id="btn-logout" style="margin-left:auto;">Logout</button>
       </div>
 
       <div class="stack">
@@ -97,10 +92,39 @@
     </div>
   </main>
 
+  <div id="authModal" class="modal-backdrop hidden">
+    <div class="modal">
+      <h2>Login or Register</h2>
+      <p class="muted">Sign in to start sessions and upload files.</p>
+      <div class="stack">
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" type="email" placeholder="student@example.edu" />
+        </div>
+        <div class="field">
+          <label for="displayName">Display name</label>
+          <input id="displayName" type="text" placeholder="Sample Student" />
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" type="password" placeholder="Choose a password" />
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="secondary pill" id="btn-close-auth">Close</button>
+        <button class="secondary pill" id="btn-login">Login</button>
+        <button class="primary pill" id="btn-register">Register</button>
+      </div>
+    </div>
+  </div>
+
 <script>
   const timerEl = document.getElementById('timer');
   const statusEl = document.getElementById('sessionStatus');
   const logEl = document.getElementById('log');
+  const authStatusEl = document.getElementById('authStatus');
+  const authDotEl = document.getElementById('authDot');
+  const authModal = document.getElementById('authModal');
   let timerInterval = null;
   let startTime = null;
   let accumulatedMs = 0;
@@ -162,6 +186,9 @@
       const contentType = res.headers.get('content-type') || '';
       const body = contentType.includes('application/json') ? await res.json() : await res.text();
       log(`${options?.method || 'GET'} ${path} (${res.status})`, body);
+      if (res.status === 401) {
+        showAuthModal();
+      }
       return { ok: res.ok, status: res.status, body };
     } catch (err) {
       log(`${options?.method || 'GET'} ${path} (error)`, err.message);
@@ -171,10 +198,20 @@
 
   function updateAuthStatus() {
     if (authToken) {
-      document.getElementById('authStatus').textContent = 'Authenticated (token stored locally).';
+      authStatusEl.textContent = 'Authenticated (token stored locally).';
+      authDotEl.classList.add('active');
     } else {
-      document.getElementById('authStatus').textContent = 'Not authenticated.';
+      authStatusEl.textContent = 'Not authenticated.';
+      authDotEl.classList.remove('active');
     }
+  }
+
+  function showAuthModal() {
+    authModal.classList.remove('hidden');
+  }
+
+  function hideAuthModal() {
+    authModal.classList.add('hidden');
   }
 
   document.getElementById('btn-start').addEventListener('click', async () => {
@@ -271,6 +308,7 @@
       authToken = resp.body.token;
       localStorage.setItem('cc_jwt', authToken);
       updateAuthStatus();
+      hideAuthModal();
     }
   });
 
@@ -290,6 +328,7 @@
       authToken = resp.body.token;
       localStorage.setItem('cc_jwt', authToken);
       updateAuthStatus();
+      hideAuthModal();
     }
   });
 
@@ -299,6 +338,9 @@
     updateAuthStatus();
     log('logout', 'Token cleared locally');
   });
+
+  document.getElementById('btn-open-auth').addEventListener('click', showAuthModal);
+  document.getElementById('btn-close-auth').addEventListener('click', hideAuthModal);
 
   document.addEventListener('visibilitychange', handleVisibilityChange);
   window.addEventListener('focus', handleFocus);

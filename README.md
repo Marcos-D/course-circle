@@ -23,8 +23,8 @@ Spring Boot backend (Java 17) with minimal static UIs for study sessions, course
 mvn spring-boot:run
 ```
 Then open:
-- Student page `/`: register/login, start/end sessions, upload files. Timer pauses on tab blur/hidden.
-- Dev page `/dev.html`: health, list/create users, list/create courses, start/end sessions, list sessions, upload/list/download files.
+- Student page `/`: register/login via modal, start/end sessions, upload files. Timer pauses on tab blur/hidden; prompts login if a call is unauthorized.
+- Dev page `/dev.html`: health, list/create users, list/create courses (includes UCSD CS sample course quick-add), start/end sessions, list sessions, upload/list/download files.
 
 ## Notes
 - `.env` is ignored; configure secrets locally. Rotate any credentials that were previously committed.
