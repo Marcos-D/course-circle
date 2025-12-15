@@ -1,1 +1,2 @@
 com\coursecircle\session\SessionServiceTest.class
+com\coursecircle\auth\AuthIntegrationTest.class
