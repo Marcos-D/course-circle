@@ -49,6 +49,11 @@
         <input id="courseSchoolId" type="number" placeholder="e.g. 1" />
         <button id="btn-create-course" style="margin-top:8px;">POST /api/courses</button>
       </div>
+      <div style="margin-top:12px;">
+        <label>Quick add UCSD CS sample</label>
+        <select id="sampleCourseSelect"></select>
+        <button id="btn-create-sample" style="margin-top:8px;">Create sample course</button>
+      </div>
     </div>
 
     <div class="card">
@@ -139,6 +144,29 @@
     }
   }
 
+  const sampleCourses = [
+    { code: 'CSE8A', name: 'Introduction to Programming I (Java)', term: 'Fall 2025' },
+    { code: 'CSE12', name: 'Basic Data Structures & OO Design', term: 'Fall 2025' },
+    { code: 'CSE30', name: 'Computer Organization & Systems Programming', term: 'Winter 2026' },
+    { code: 'CSE100', name: 'Advanced Data Structures', term: 'Spring 2026' },
+    { code: 'CSE101', name: 'Design & Analysis of Algorithms', term: 'Spring 2026' },
+    { code: 'CSE120', name: 'Operating Systems', term: 'Fall 2025' },
+    { code: 'CSE140', name: 'Digital Systems Components & Design', term: 'Winter 2026' }
+  ];
+
+  function populateSampleCourses() {
+    const select = document.getElementById('sampleCourseSelect');
+    select.innerHTML = '<option value=\"\">Select a sample course</option>';
+    sampleCourses.forEach((course, idx) => {
+      const option = document.createElement('option');
+      option.value = idx;
+      option.textContent = `${course.code} — ${course.name} (${course.term})`;
+      select.appendChild(option);
+    });
+  }
+
+  populateSampleCourses();
+
   document.getElementById('btn-health').addEventListener('click', () => callApi('/api/health'));
   document.getElementById('btn-courses').addEventListener('click', () => callApi('/api/courses'));
   document.getElementById('btn-create-course').addEventListener('click', async () => {
@@ -157,6 +185,20 @@
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code, name, term: term || null, schoolId })
+    });
+  });
+
+  document.getElementById('btn-create-sample').addEventListener('click', async () => {
+    const select = document.getElementById('sampleCourseSelect');
+    if (!select.value) {
+      appendLog('createSampleCourse', 'Choose a sample course first');
+      return;
+    }
+    const course = sampleCourses[Number(select.value)];
+    await callApi('/api/courses', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: course.code, name: course.name, term: course.term })
     });
   });
 
