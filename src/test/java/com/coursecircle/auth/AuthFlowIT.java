@@ -3,6 +3,7 @@ package com.coursecircle.auth;
 import com.coursecircle.dto.AuthResponse;
 import com.coursecircle.dto.LoginRequest;
 import com.coursecircle.dto.RegisterRequest;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -25,13 +27,20 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = com.coursecircle.CourseCircleApplication.class)
 @Testcontainers
 @ActiveProfiles("ci")
-class AuthFlowIT {
+public class AuthFlowIT {
 
     @Container
     static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
+
+    @BeforeAll
+    static void requireDocker() {
+        org.junit.jupiter.api.Assumptions.assumeTrue(
+                DockerClientFactory.instance().isDockerAvailable(),
+                "Docker not available, skipping ITs");
+    }
 
     @DynamicPropertySource
     static void dataSourceProps(DynamicPropertyRegistry registry) {

@@ -1,12 +1,7 @@
 package com.coursecircle.course;
 
-import com.coursecircle.dto.AuthResponse;
-import com.coursecircle.dto.CourseResponse;
-import com.coursecircle.dto.LoginRequest;
-import com.coursecircle.dto.RegisterRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -18,22 +13,24 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = com.coursecircle.CourseCircleApplication.class)
 @Testcontainers
 @ActiveProfiles("ci")
-class CourseCatalogIT {
+public class CourseCatalogIT {
 
     @Container
     static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
@@ -48,68 +45,56 @@ class CourseCatalogIT {
     @LocalServerPort
     private int port;
 
-    @Autowired
-    private TestRestTemplate restTemplate;
-
-    @Autowired
-    private CourseRepository courseRepository;
+    private final TestRestTemplate restTemplate = new TestRestTemplate();
 
     private String bearerToken;
 
     @BeforeEach
     void setup() {
+        org.junit.jupiter.api.Assumptions.assumeTrue(
+                DockerClientFactory.instance().isDockerAvailable(),
+                "Docker not available, skipping ITs");
+
         String email = "catalog-" + UUID.randomUUID() + "@example.com";
         String password = "password123";
 
-        RegisterRequest registerRequest = new RegisterRequest();
-        registerRequest.setEmail(email);
-        registerRequest.setPassword(password);
-        registerRequest.setDisplayName("Catalog User");
+        restTemplate.postForEntity(url("/api/auth/register"),
+                Map.of("email", email, "password", password, "displayName", "Catalog User"),
+                Map.class);
 
-        restTemplate.postForEntity(url("/api/auth/register"), registerRequest, AuthResponse.class);
-
-        LoginRequest loginRequest = new LoginRequest();
-        loginRequest.setEmail(email);
-        loginRequest.setPassword(password);
-        ResponseEntity<AuthResponse> loginResponse = restTemplate.postForEntity(
-                url("/api/auth/login"), loginRequest, AuthResponse.class);
+        ResponseEntity<Map> loginResponse = restTemplate.postForEntity(
+                url("/api/auth/login"), Map.of("email", email, "password", password), Map.class);
         assertEquals(HttpStatus.OK, loginResponse.getStatusCode());
-        bearerToken = loginResponse.getBody() != null ? loginResponse.getBody().getToken() : null;
+        bearerToken = loginResponse.getBody() != null ? (String) loginResponse.getBody().get("token") : null;
         assertNotNull(bearerToken);
 
-        courseRepository.deleteAll();
-        CourseEntity c1 = new CourseEntity();
-        c1.setCode("CSE8A");
-        c1.setName("Intro to Programming I");
-        c1.setTerm("Fall 2025");
+        List<Map<String, String>> samples = Arrays.asList(
+                Map.of("code", "CSE8A", "name", "Intro to Programming I", "term", "Fall 2025"),
+                Map.of("code", "CSE100", "name", "Advanced Data Structures", "term", "Spring 2026"),
+                Map.of("code", "CSE120", "name", "Operating Systems", "term", "Fall 2025")
+        );
 
-        CourseEntity c2 = new CourseEntity();
-        c2.setCode("CSE100");
-        c2.setName("Advanced Data Structures");
-        c2.setTerm("Spring 2026");
-
-        CourseEntity c3 = new CourseEntity();
-        c3.setCode("CSE120");
-        c3.setName("Operating Systems");
-        c3.setTerm("Fall 2025");
-
-        courseRepository.saveAll(Arrays.asList(c1, c2, c3));
+        for (Map<String, String> course : samples) {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(bearerToken);
+            restTemplate.exchange(url("/api/courses"), HttpMethod.POST, new HttpEntity<>(course, headers), Map.class);
+        }
     }
 
     @Test
     void listsSeededCourses() {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(bearerToken);
-        ResponseEntity<CourseResponse[]> response = restTemplate.exchange(
-                url("/api/courses"), HttpMethod.GET, new HttpEntity<>(headers), CourseResponse[].class);
+        ResponseEntity<Map[]> response = restTemplate.exchange(
+                url("/api/courses"), HttpMethod.GET, new HttpEntity<>(headers), Map[].class);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        List<CourseResponse> courses = Arrays.asList(response.getBody());
+        List<Map> courses = Arrays.asList(response.getBody());
 
-        assertTrue(courses.stream().anyMatch(c -> "CSE8A".equals(c.getCode())));
-        assertTrue(courses.stream().anyMatch(c -> "CSE100".equals(c.getCode())));
-        assertTrue(courses.stream().anyMatch(c -> "CSE120".equals(c.getCode())));
+        assertTrue(courses.stream().anyMatch(c -> "CSE8A".equals(c.get("code"))));
+        assertTrue(courses.stream().anyMatch(c -> "CSE100".equals(c.get("code"))));
+        assertTrue(courses.stream().anyMatch(c -> "CSE120".equals(c.get("code"))));
     }
 
     private String url(String path) {
