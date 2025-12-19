@@ -1,2 +1,3 @@
+com\coursecircle\auth\AuthFlowIT.class
 com\coursecircle\session\SessionServiceTest.class
-com\coursecircle\auth\AuthIntegrationTest.class
+com\coursecircle\course\CourseCatalogIT.class
