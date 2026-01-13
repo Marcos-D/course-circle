@@ -4,6 +4,7 @@ import com.coursecircle.auth.CurrentUser;
 import com.coursecircle.auth.CurrentUserService;
 import com.coursecircle.dto.SessionResponse;
 import com.coursecircle.dto.StartSessionRequest;
+import com.coursecircle.exception.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
