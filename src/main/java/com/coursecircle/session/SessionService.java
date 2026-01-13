@@ -76,12 +76,34 @@ public class SessionService {
         return toResponse(saved);
     }
 
+    @Transactional
+    public int endAllActiveSessions(CurrentUser currentUser) {
+        List<SessionEntity> activeSessions = sessionRepository.findByUserIdAndEndedAtIsNull(currentUser.getId());
+        if (activeSessions.isEmpty()) {
+            return 0;
+        }
+        Instant endedAt = Instant.now();
+        activeSessions.forEach(session -> session.setEndedAt(endedAt));
+        sessionRepository.saveAll(activeSessions);
+        log.info("Ended {} active sessions for user {}", activeSessions.size(), currentUser.getId());
+        return activeSessions.size();
+    }
+
     @Transactional(readOnly = true)
     public List<SessionResponse> listSessions() {
         return sessionRepository.findAll()
                 .stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public SessionResponse getActiveSession(CurrentUser currentUser) {
+        List<SessionEntity> activeSessions = sessionRepository.findByUserIdAndEndedAtIsNull(currentUser.getId());
+        if (activeSessions.isEmpty()) {
+            throw new ResourceNotFoundException("No active session for user: " + currentUser.getId());
+        }
+        return toResponse(activeSessions.get(0));
     }
 
     private SessionResponse toResponse(SessionEntity entity) {
