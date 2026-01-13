@@ -19,11 +19,23 @@
     pre { background: #0f172a; color: #e2e8f0; padding: 16px; border-radius: 8px; max-height: 320px; overflow: auto; font-size: 13px; }
     .log-title { display: flex; align-items: center; justify-content: space-between; margin-top: 0; }
     .log-title button { background: #334155; padding: 6px 10px; }
+    .token-row { display: flex; gap: 8px; }
   </style>
 </head>
 <body>
-  <h1>CourseCircle Demo</h1>
+  <h1>CourseCircle Dev Page</h1>
   <p class="desc">Minimal UI to exercise the backend APIs. Provide IDs from your database (e.g., course IDs) and watch responses below.</p>
+
+  <div class="card">
+    <h2>API Token</h2>
+    <p class="muted">Paste your JWT (from the student page) to authorize protected calls.</p>
+    <div class="token-row">
+      <input id="jwtToken" type="text" placeholder="Bearer token..." />
+      <button id="btn-save-token">Save</button>
+      <button id="btn-clear-token">Clear</button>
+    </div>
+    <p class="muted">Token is stored in this browser only (localStorage key: cc_jwt).</p>
+  </div>
 
   <div class="grid">
     <div class="card">
@@ -43,16 +55,7 @@
         <input id="courseCode" type="text" placeholder="e.g. CSDSA" />
         <label>Name</label>
         <input id="courseName" type="text" placeholder="Data Structures & Algorithms" />
-        <label>Term</label>
-        <input id="courseTerm" type="text" placeholder="Fall 2025" />
-        <label>School ID (optional)</label>
-        <input id="courseSchoolId" type="number" placeholder="e.g. 1" />
         <button id="btn-create-course" style="margin-top:8px;">POST /api/courses</button>
-      </div>
-      <div style="margin-top:12px;">
-        <label>Quick add UCSD CS sample</label>
-        <select id="sampleCourseSelect"></select>
-        <button id="btn-create-sample" style="margin-top:8px;">Create sample course</button>
       </div>
     </div>
 
@@ -133,7 +136,12 @@
 
   async function callApi(path, options) {
     try {
-      const res = await fetch(path, options);
+      const headers = options?.headers ? { ...options.headers } : {};
+      const token = localStorage.getItem('cc_jwt');
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const res = await fetch(path, options ? { ...options, headers } : { headers });
       const contentType = res.headers.get('content-type') || '';
       const body = contentType.includes('application/json') ? await res.json() : await res.text();
       appendLog(`${options?.method || 'GET'} ${path} (${res.status})`, body);
@@ -144,37 +152,26 @@
     }
   }
 
-  const sampleCourses = [
-    { code: 'CSE8A', name: 'Introduction to Programming I (Java)', term: 'Fall 2025' },
-    { code: 'CSE12', name: 'Basic Data Structures & OO Design', term: 'Fall 2025' },
-    { code: 'CSE30', name: 'Computer Organization & Systems Programming', term: 'Winter 2026' },
-    { code: 'CSE100', name: 'Advanced Data Structures', term: 'Spring 2026' },
-    { code: 'CSE101', name: 'Design & Analysis of Algorithms', term: 'Spring 2026' },
-    { code: 'CSE120', name: 'Operating Systems', term: 'Fall 2025' },
-    { code: 'CSE140', name: 'Digital Systems Components & Design', term: 'Winter 2026' }
-  ];
-
-  function populateSampleCourses() {
-    const select = document.getElementById('sampleCourseSelect');
-    select.innerHTML = '<option value=\"\">Select a sample course</option>';
-    sampleCourses.forEach((course, idx) => {
-      const option = document.createElement('option');
-      option.value = idx;
-      option.textContent = `${course.code} — ${course.name} (${course.term})`;
-      select.appendChild(option);
-    });
-  }
-
-  populateSampleCourses();
+  const tokenInput = document.getElementById('jwtToken');
+  tokenInput.value = localStorage.getItem('cc_jwt') || '';
+  document.getElementById('btn-save-token').addEventListener('click', () => {
+    const token = tokenInput.value.trim();
+    if (token) {
+      localStorage.setItem('cc_jwt', token);
+      appendLog('token', 'Saved JWT to localStorage');
+    }
+  });
+  document.getElementById('btn-clear-token').addEventListener('click', () => {
+    localStorage.removeItem('cc_jwt');
+    tokenInput.value = '';
+    appendLog('token', 'Cleared JWT from localStorage');
+  });
 
   document.getElementById('btn-health').addEventListener('click', () => callApi('/api/health'));
   document.getElementById('btn-courses').addEventListener('click', () => callApi('/api/courses'));
   document.getElementById('btn-create-course').addEventListener('click', async () => {
     const code = document.getElementById('courseCode').value.trim();
     const name = document.getElementById('courseName').value.trim();
-    const term = document.getElementById('courseTerm').value.trim();
-    const schoolIdRaw = document.getElementById('courseSchoolId').value;
-    const schoolId = schoolIdRaw ? Number(schoolIdRaw) : null;
 
     if (!code || !name) {
       appendLog('createCourse', 'Code and name are required');
@@ -184,21 +181,7 @@
     await callApi('/api/courses', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, name, term: term || null, schoolId })
-    });
-  });
-
-  document.getElementById('btn-create-sample').addEventListener('click', async () => {
-    const select = document.getElementById('sampleCourseSelect');
-    if (!select.value) {
-      appendLog('createSampleCourse', 'Choose a sample course first');
-      return;
-    }
-    const course = sampleCourses[Number(select.value)];
-    await callApi('/api/courses', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code: course.code, name: course.name, term: course.term })
+      body: JSON.stringify({ code, name })
     });
   });
 

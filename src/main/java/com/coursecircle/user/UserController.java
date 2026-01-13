@@ -43,6 +43,9 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
         UserEntity entity = new UserEntity();
         entity.setEmail(request.getEmail());
         entity.setDisplayName(request.getDisplayName());

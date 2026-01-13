@@ -44,10 +44,28 @@ public class SessionController {
         return ResponseEntity.ok(sessionService.listSessions());
     }
 
+    @GetMapping("/active")
+    public ResponseEntity<SessionResponse> getActiveSession() {
+        CurrentUser currentUser = currentUserService.getCurrentUser();
+        try {
+            SessionResponse response = sessionService.getActiveSession(currentUser);
+            return ResponseEntity.ok(response);
+        } catch (ResourceNotFoundException ex) {
+            return ResponseEntity.noContent().build();
+        }
+    }
+
     @PatchMapping("/{id}/end")
     public ResponseEntity<SessionResponse> endSession(@PathVariable("id") Long sessionId) {
         CurrentUser currentUser = currentUserService.getCurrentUser();
         SessionResponse response = sessionService.endSession(currentUser, sessionId);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/end-all")
+    public ResponseEntity<Void> endAllSessions() {
+        CurrentUser currentUser = currentUserService.getCurrentUser();
+        sessionService.endAllActiveSessions(currentUser);
+        return ResponseEntity.noContent().build();
     }
 }
