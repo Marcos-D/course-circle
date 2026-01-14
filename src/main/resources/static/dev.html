@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>CourseCircle Demo</title>
+  <title>CourseCircle Dev Page</title>
   <style>
     :root { --card:#fff; --border:#e1e4ea; --accent:#0d6efd; --text:#222; --muted:#555; --bg:#f6f7fb; }
     body { font-family: "Segoe UI", Arial, sans-serif; background: var(--bg); color: var(--text); margin: 24px; }
@@ -12,7 +12,7 @@
     .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
     .card h2 { margin: 0 0 8px; font-size: 18px; }
     label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
-    input[type="number"], input[type="text"] { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; }
+    input[type="number"], input[type="text"], select { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; }
     button { background: var(--accent); color: #fff; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; }
     button:hover { filter: brightness(0.95); }
     .muted { color: var(--muted); font-size: 13px; }
@@ -100,19 +100,29 @@
 
     <div class="card">
       <h2>List Files</h2>
-      <label for="courseIdList">Course ID</label>
-      <input id="courseIdList" type="number" placeholder="e.g. 1" />
-      <button id="btn-list">GET /api/courses/{courseId}/files</button>
+      <label for="courseIdList">Course</label>
+      <select id="courseIdList"></select>
+      <button id="btn-refresh-course-list" style="margin-top:8px;">Refresh courses</button>
+      <button id="btn-list" style="margin-top:8px;">GET /api/courses/{courseId}/files</button>
     </div>
 
     <div class="card">
       <h2>Upload File</h2>
-      <label for="courseIdUpload">Course ID</label>
-      <input id="courseIdUpload" type="number" placeholder="e.g. 1" />
+      <label for="courseIdUpload">Course</label>
+      <select id="courseIdUpload"></select>
       <label for="fileUpload">File</label>
       <input id="fileUpload" type="file" />
       <button id="btn-upload">POST /api/courses/{courseId}/files</button>
       <p class="muted">Uploads are stored to the configured storage dir (default ./uploads).</p>
+    </div>
+
+    <div class="card">
+      <h2>Delete File</h2>
+      <label for="fileIdDelete">File ID</label>
+      <input id="fileIdDelete" type="number" placeholder="file id" />
+      <label for="courseIdDelete">Course ID</label>
+      <select id="courseIdDelete"></select>
+      <button id="btn-delete">DELETE /api/courses/{courseId}/files/{fileId}</button>
     </div>
   </div>
 
@@ -153,6 +163,30 @@
   }
 
   const tokenInput = document.getElementById('jwtToken');
+  const courseListSelect = document.getElementById('courseIdList');
+  const courseUploadSelect = document.getElementById('courseIdUpload');
+  const courseDeleteSelect = document.getElementById('courseIdDelete');
+
+  function fillCourseSelect(selectEl, courses) {
+    selectEl.innerHTML = '<option value="">Select a course</option>';
+    courses.forEach((course) => {
+      const option = document.createElement('option');
+      option.value = course.id;
+      option.textContent = `${course.code} - ${course.name}`;
+      selectEl.appendChild(option);
+    });
+  }
+
+  async function refreshCourseSelects() {
+    const resp = await callApi('/api/courses');
+    if (!resp.ok || !Array.isArray(resp.body)) {
+      appendLog('courses', 'Failed to load course list');
+      return;
+    }
+    fillCourseSelect(courseListSelect, resp.body);
+    fillCourseSelect(courseUploadSelect, resp.body);
+    fillCourseSelect(courseDeleteSelect, resp.body);
+  }
   tokenInput.value = localStorage.getItem('cc_jwt') || '';
   document.getElementById('btn-save-token').addEventListener('click', () => {
     const token = tokenInput.value.trim();
@@ -169,6 +203,7 @@
 
   document.getElementById('btn-health').addEventListener('click', () => callApi('/api/health'));
   document.getElementById('btn-courses').addEventListener('click', () => callApi('/api/courses'));
+  document.getElementById('btn-refresh-course-list').addEventListener('click', refreshCourseSelects);
   document.getElementById('btn-create-course').addEventListener('click', async () => {
     const code = document.getElementById('courseCode').value.trim();
     const name = document.getElementById('courseName').value.trim();
@@ -229,7 +264,7 @@
   });
 
   document.getElementById('btn-list').addEventListener('click', async () => {
-    const courseId = Number(document.getElementById('courseIdList').value);
+    const courseId = Number(courseListSelect.value);
     if (!courseId) {
       appendLog('listFiles', 'Provide a course ID');
       return;
@@ -238,7 +273,7 @@
   });
 
   document.getElementById('btn-upload').addEventListener('click', async () => {
-    const courseId = Number(document.getElementById('courseIdUpload').value);
+    const courseId = Number(courseUploadSelect.value);
     const fileInput = document.getElementById('fileUpload');
     if (!courseId) {
       appendLog('uploadFile', 'Provide a course ID');
@@ -256,9 +291,23 @@
     });
   });
 
+  document.getElementById('btn-delete').addEventListener('click', async () => {
+    const fileId = Number(document.getElementById('fileIdDelete').value);
+    const courseId = Number(courseDeleteSelect.value);
+    if (!fileId || !courseId) {
+      appendLog('deleteFile', 'Provide a course ID and file ID');
+      return;
+    }
+    await callApi(`/api/courses/${courseId}/files/${fileId}`, {
+      method: 'DELETE'
+    });
+  });
+
   document.getElementById('btn-clear').addEventListener('click', () => {
     logBox.textContent = '';
   });
+
+  refreshCourseSelects();
 </script>
 </body>
 </html>

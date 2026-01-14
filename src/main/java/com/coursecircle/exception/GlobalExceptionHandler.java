@@ -37,6 +37,13 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(message, "VALIDATION_ERROR"));
     }
 
+    // Bad request inputs (ex: unsupported file types) return 400s.
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(ex.getMessage(), "BAD_REQUEST"));
+    }
+
     // Unknown errors bubble up as 500s to avoid leaking stack traces.
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneric(Exception ex) {

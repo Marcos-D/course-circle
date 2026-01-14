@@ -33,7 +33,6 @@ com\coursecircle\auth\AuthController.class
 com\coursecircle\dto\ErrorResponse.class
 com\coursecircle\user\UserEntity.class
 com\coursecircle\auth\CurrentUser.class
-com\coursecircle\session\SessionController.class
 com\coursecircle\session\SessionService.class
 com\coursecircle\auth\JwtService.class
 com\coursecircle\controller\HealthController.class

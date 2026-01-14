@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>CourseCircle Demo</title>
+  <title>CourseCircle Dev Page</title>
   <style>
     :root { --card:#fff; --border:#e1e4ea; --accent:#0d6efd; --text:#222; --muted:#555; --bg:#f6f7fb; }
     body { font-family: "Segoe UI", Arial, sans-serif; background: var(--bg); color: var(--text); margin: 24px; }
@@ -12,18 +12,30 @@
     .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
     .card h2 { margin: 0 0 8px; font-size: 18px; }
     label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
-    input[type="number"], input[type="text"] { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; }
+    input[type="number"], input[type="text"], select { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; }
     button { background: var(--accent); color: #fff; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; }
     button:hover { filter: brightness(0.95); }
     .muted { color: var(--muted); font-size: 13px; }
     pre { background: #0f172a; color: #e2e8f0; padding: 16px; border-radius: 8px; max-height: 320px; overflow: auto; font-size: 13px; }
     .log-title { display: flex; align-items: center; justify-content: space-between; margin-top: 0; }
     .log-title button { background: #334155; padding: 6px 10px; }
+    .token-row { display: flex; gap: 8px; }
   </style>
 </head>
 <body>
-  <h1>CourseCircle Demo</h1>
+  <h1>CourseCircle Dev Page</h1>
   <p class="desc">Minimal UI to exercise the backend APIs. Provide IDs from your database (e.g., course IDs) and watch responses below.</p>
+
+  <div class="card">
+    <h2>API Token</h2>
+    <p class="muted">Paste your JWT (from the student page) to authorize protected calls.</p>
+    <div class="token-row">
+      <input id="jwtToken" type="text" placeholder="Bearer token..." />
+      <button id="btn-save-token">Save</button>
+      <button id="btn-clear-token">Clear</button>
+    </div>
+    <p class="muted">Token is stored in this browser only (localStorage key: cc_jwt).</p>
+  </div>
 
   <div class="grid">
     <div class="card">
@@ -43,16 +55,7 @@
         <input id="courseCode" type="text" placeholder="e.g. CSDSA" />
         <label>Name</label>
         <input id="courseName" type="text" placeholder="Data Structures & Algorithms" />
-        <label>Term</label>
-        <input id="courseTerm" type="text" placeholder="Fall 2025" />
-        <label>School ID (optional)</label>
-        <input id="courseSchoolId" type="number" placeholder="e.g. 1" />
         <button id="btn-create-course" style="margin-top:8px;">POST /api/courses</button>
-      </div>
-      <div style="margin-top:12px;">
-        <label>Quick add UCSD CS sample</label>
-        <select id="sampleCourseSelect"></select>
-        <button id="btn-create-sample" style="margin-top:8px;">Create sample course</button>
       </div>
     </div>
 
@@ -97,19 +100,29 @@
 
     <div class="card">
       <h2>List Files</h2>
-      <label for="courseIdList">Course ID</label>
-      <input id="courseIdList" type="number" placeholder="e.g. 1" />
-      <button id="btn-list">GET /api/courses/{courseId}/files</button>
+      <label for="courseIdList">Course</label>
+      <select id="courseIdList"></select>
+      <button id="btn-refresh-course-list" style="margin-top:8px;">Refresh courses</button>
+      <button id="btn-list" style="margin-top:8px;">GET /api/courses/{courseId}/files</button>
     </div>
 
     <div class="card">
       <h2>Upload File</h2>
-      <label for="courseIdUpload">Course ID</label>
-      <input id="courseIdUpload" type="number" placeholder="e.g. 1" />
+      <label for="courseIdUpload">Course</label>
+      <select id="courseIdUpload"></select>
       <label for="fileUpload">File</label>
       <input id="fileUpload" type="file" />
       <button id="btn-upload">POST /api/courses/{courseId}/files</button>
       <p class="muted">Uploads are stored to the configured storage dir (default ./uploads).</p>
+    </div>
+
+    <div class="card">
+      <h2>Delete File</h2>
+      <label for="fileIdDelete">File ID</label>
+      <input id="fileIdDelete" type="number" placeholder="file id" />
+      <label for="courseIdDelete">Course ID</label>
+      <select id="courseIdDelete"></select>
+      <button id="btn-delete">DELETE /api/courses/{courseId}/files/{fileId}</button>
     </div>
   </div>
 
@@ -133,7 +146,12 @@
 
   async function callApi(path, options) {
     try {
-      const res = await fetch(path, options);
+      const headers = options?.headers ? { ...options.headers } : {};
+      const token = localStorage.getItem('cc_jwt');
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const res = await fetch(path, options ? { ...options, headers } : { headers });
       const contentType = res.headers.get('content-type') || '';
       const body = contentType.includes('application/json') ? await res.json() : await res.text();
       appendLog(`${options?.method || 'GET'} ${path} (${res.status})`, body);
@@ -144,37 +162,51 @@
     }
   }
 
-  const sampleCourses = [
-    { code: 'CSE8A', name: 'Introduction to Programming I (Java)', term: 'Fall 2025' },
-    { code: 'CSE12', name: 'Basic Data Structures & OO Design', term: 'Fall 2025' },
-    { code: 'CSE30', name: 'Computer Organization & Systems Programming', term: 'Winter 2026' },
-    { code: 'CSE100', name: 'Advanced Data Structures', term: 'Spring 2026' },
-    { code: 'CSE101', name: 'Design & Analysis of Algorithms', term: 'Spring 2026' },
-    { code: 'CSE120', name: 'Operating Systems', term: 'Fall 2025' },
-    { code: 'CSE140', name: 'Digital Systems Components & Design', term: 'Winter 2026' }
-  ];
+  const tokenInput = document.getElementById('jwtToken');
+  const courseListSelect = document.getElementById('courseIdList');
+  const courseUploadSelect = document.getElementById('courseIdUpload');
+  const courseDeleteSelect = document.getElementById('courseIdDelete');
 
-  function populateSampleCourses() {
-    const select = document.getElementById('sampleCourseSelect');
-    select.innerHTML = '<option value=\"\">Select a sample course</option>';
-    sampleCourses.forEach((course, idx) => {
+  function fillCourseSelect(selectEl, courses) {
+    selectEl.innerHTML = '<option value="">Select a course</option>';
+    courses.forEach((course) => {
       const option = document.createElement('option');
-      option.value = idx;
-      option.textContent = `${course.code} — ${course.name} (${course.term})`;
-      select.appendChild(option);
+      option.value = course.id;
+      option.textContent = `${course.code} - ${course.name}`;
+      selectEl.appendChild(option);
     });
   }
 
-  populateSampleCourses();
+  async function refreshCourseSelects() {
+    const resp = await callApi('/api/courses');
+    if (!resp.ok || !Array.isArray(resp.body)) {
+      appendLog('courses', 'Failed to load course list');
+      return;
+    }
+    fillCourseSelect(courseListSelect, resp.body);
+    fillCourseSelect(courseUploadSelect, resp.body);
+    fillCourseSelect(courseDeleteSelect, resp.body);
+  }
+  tokenInput.value = localStorage.getItem('cc_jwt') || '';
+  document.getElementById('btn-save-token').addEventListener('click', () => {
+    const token = tokenInput.value.trim();
+    if (token) {
+      localStorage.setItem('cc_jwt', token);
+      appendLog('token', 'Saved JWT to localStorage');
+    }
+  });
+  document.getElementById('btn-clear-token').addEventListener('click', () => {
+    localStorage.removeItem('cc_jwt');
+    tokenInput.value = '';
+    appendLog('token', 'Cleared JWT from localStorage');
+  });
 
   document.getElementById('btn-health').addEventListener('click', () => callApi('/api/health'));
   document.getElementById('btn-courses').addEventListener('click', () => callApi('/api/courses'));
+  document.getElementById('btn-refresh-course-list').addEventListener('click', refreshCourseSelects);
   document.getElementById('btn-create-course').addEventListener('click', async () => {
     const code = document.getElementById('courseCode').value.trim();
     const name = document.getElementById('courseName').value.trim();
-    const term = document.getElementById('courseTerm').value.trim();
-    const schoolIdRaw = document.getElementById('courseSchoolId').value;
-    const schoolId = schoolIdRaw ? Number(schoolIdRaw) : null;
 
     if (!code || !name) {
       appendLog('createCourse', 'Code and name are required');
@@ -184,21 +216,7 @@
     await callApi('/api/courses', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, name, term: term || null, schoolId })
-    });
-  });
-
-  document.getElementById('btn-create-sample').addEventListener('click', async () => {
-    const select = document.getElementById('sampleCourseSelect');
-    if (!select.value) {
-      appendLog('createSampleCourse', 'Choose a sample course first');
-      return;
-    }
-    const course = sampleCourses[Number(select.value)];
-    await callApi('/api/courses', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code: course.code, name: course.name, term: course.term })
+      body: JSON.stringify({ code, name })
     });
   });
 
@@ -246,7 +264,7 @@
   });
 
   document.getElementById('btn-list').addEventListener('click', async () => {
-    const courseId = Number(document.getElementById('courseIdList').value);
+    const courseId = Number(courseListSelect.value);
     if (!courseId) {
       appendLog('listFiles', 'Provide a course ID');
       return;
@@ -255,7 +273,7 @@
   });
 
   document.getElementById('btn-upload').addEventListener('click', async () => {
-    const courseId = Number(document.getElementById('courseIdUpload').value);
+    const courseId = Number(courseUploadSelect.value);
     const fileInput = document.getElementById('fileUpload');
     if (!courseId) {
       appendLog('uploadFile', 'Provide a course ID');
@@ -273,9 +291,23 @@
     });
   });
 
+  document.getElementById('btn-delete').addEventListener('click', async () => {
+    const fileId = Number(document.getElementById('fileIdDelete').value);
+    const courseId = Number(courseDeleteSelect.value);
+    if (!fileId || !courseId) {
+      appendLog('deleteFile', 'Provide a course ID and file ID');
+      return;
+    }
+    await callApi(`/api/courses/${courseId}/files/${fileId}`, {
+      method: 'DELETE'
+    });
+  });
+
   document.getElementById('btn-clear').addEventListener('click', () => {
     logBox.textContent = '';
   });
+
+  refreshCourseSelects();
 </script>
 </body>
 </html>
