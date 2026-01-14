@@ -10,6 +10,8 @@ public class CourseFileResponse {
     private Long sizeBytes;
     private Instant uploadedAt;
     private Long uploaderId;
+    private String uploaderEmail;
+    private String uploaderDisplayName;
 
     public Long getId() {
         return id;
@@ -57,5 +59,21 @@ public class CourseFileResponse {
 
     public void setUploaderId(Long uploaderId) {
         this.uploaderId = uploaderId;
+    }
+
+    public String getUploaderEmail() {
+        return uploaderEmail;
+    }
+
+    public void setUploaderEmail(String uploaderEmail) {
+        this.uploaderEmail = uploaderEmail;
+    }
+
+    public String getUploaderDisplayName() {
+        return uploaderDisplayName;
+    }
+
+    public void setUploaderDisplayName(String uploaderDisplayName) {
+        this.uploaderDisplayName = uploaderDisplayName;
     }
 }

@@ -48,6 +48,12 @@ public class CourseFileService {
 
     @Transactional
     public UploadFileResponse uploadFile(CurrentUser currentUser, Long courseId, MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File is required");
+        }
+        if (!isAllowedFile(file.getContentType(), file.getOriginalFilename())) {
+            throw new IllegalArgumentException("Only PDF or image files are allowed");
+        }
         CourseEntity course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new ResourceNotFoundException("Course not found: " + courseId));
         UserEntity uploader = userRepository.findById(currentUser.getId())
@@ -118,6 +124,27 @@ public class CourseFileService {
         return UUID.randomUUID() + extension;
     }
 
+    private boolean isAllowedFile(String contentType, String filename) {
+        if (contentType != null) {
+            if (contentType.startsWith("image/")) {
+                return true;
+            }
+            if ("application/pdf".equalsIgnoreCase(contentType)) {
+                return true;
+            }
+        }
+        if (filename == null) {
+            return false;
+        }
+        String lowered = filename.toLowerCase();
+        return lowered.endsWith(".pdf")
+                || lowered.endsWith(".png")
+                || lowered.endsWith(".jpg")
+                || lowered.endsWith(".jpeg")
+                || lowered.endsWith(".gif")
+                || lowered.endsWith(".webp");
+    }
+
     private UploadFileResponse toUploadResponse(CourseFileEntity entity) {
         UploadFileResponse response = new UploadFileResponse();
         response.setId(entity.getId());
@@ -135,7 +162,24 @@ public class CourseFileService {
         response.setContentType(entity.getContentType());
         response.setSizeBytes(entity.getSizeBytes());
         response.setUploadedAt(entity.getUploadedAt());
-        response.setUploaderId(entity.getUploader() != null ? entity.getUploader().getId() : null);
+        if (entity.getUploader() != null) {
+            response.setUploaderId(entity.getUploader().getId());
+            response.setUploaderEmail(entity.getUploader().getEmail());
+            response.setUploaderDisplayName(entity.getUploader().getDisplayName());
+        }
         return response;
+    }
+
+    @Transactional
+    public void deleteFile(Long fileId) {
+        CourseFileEntity entity = getFileMetadata(fileId);
+        Path storageDir = Path.of(appProperties.getFiles().getStorageDir()).toAbsolutePath().normalize();
+        Path filePath = storageDir.resolve(entity.getStoredFilename());
+        try {
+            Files.deleteIfExists(filePath);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to delete file", e);
+        }
+        courseFileRepository.delete(entity);
     }
 }

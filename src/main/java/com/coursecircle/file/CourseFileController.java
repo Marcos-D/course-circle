@@ -12,6 +12,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -61,5 +62,27 @@ public class CourseFileController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition)
                 .contentType(mediaType)
                 .body(resource);
+    }
+
+    @GetMapping("/{fileId}/preview")
+    public ResponseEntity<Resource> previewFile(@PathVariable("courseId") Long courseId,
+                                                @PathVariable("fileId") Long fileId) {
+        CourseFileEntity metadata = courseFileService.getFileMetadata(fileId);
+        Resource resource = courseFileService.downloadFile(fileId);
+        String contentDisposition = "inline; filename=\"" + metadata.getOriginalFilename() + "\"";
+        MediaType mediaType = metadata.getContentType() != null
+                ? MediaType.parseMediaType(metadata.getContentType())
+                : MediaType.APPLICATION_OCTET_STREAM;
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition)
+                .contentType(mediaType)
+                .body(resource);
+    }
+
+    @DeleteMapping("/{fileId}")
+    public ResponseEntity<Void> deleteFile(@PathVariable("courseId") Long courseId,
+                                           @PathVariable("fileId") Long fileId) {
+        courseFileService.deleteFile(fileId);
+        return ResponseEntity.noContent().build();
     }
 }

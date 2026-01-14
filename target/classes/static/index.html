@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -15,24 +15,75 @@
     .stack { display:flex; gap:16px; flex-wrap:wrap; }
     .field { flex:1; min-width:220px; }
     label { display:block; font-size:13px; color:var(--muted); margin-bottom:6px; }
-    input[type="text"], input[type="number"], input[type="email"], input[type="password"] { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px; background:#fafbff; }
+    input[type="text"], input[type="number"], input[type="email"], input[type="password"], select { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px; background:#fafbff; box-sizing:border-box; }
+    input:focus, select:focus { outline:none; border-color:#94b5ff; box-shadow:0 0 0 3px rgba(13,110,253,0.15); background:#fff; }
     button.primary { background:var(--accent); color:#fff; border:none; padding:12px 16px; border-radius:10px; font-weight:700; cursor:pointer; box-shadow:0 6px 14px rgba(13,110,253,0.3); }
     button.secondary { background:#eef2ff; color:#1d3b8b; border:none; padding:12px 16px; border-radius:10px; font-weight:700; cursor:pointer; }
     button:disabled { opacity:0.6; cursor:not-allowed; box-shadow:none; }
     .timer { font-size:36px; font-weight:700; letter-spacing:1px; margin:12px 0; }
     .muted { color:var(--muted); font-size:13px; }
-    .log { margin-top:20px; background:#0f172a; color:#e2e8f0; padding:14px; border-radius:10px; min-height:160px; white-space:pre-wrap; overflow:auto; font-size:13px; }
+    .log { margin-top:20px; background:#0f172a; color:#e2e8f0; padding:14px; border-radius:10px; min-height:160px; max-height:220px; white-space:pre-wrap; overflow:auto; font-size:13px; }
     .section { margin-top:16px; }
     .pill { border-radius:999px; padding:10px 16px; }
     .auth-status { display:flex; align-items:center; gap:8px; padding:10px 12px; border:1px dashed var(--border); border-radius:10px; background:#f8faff; }
     .auth-dot { width:10px; height:10px; border-radius:50%; background:#e11d48; display:inline-block; }
     .auth-dot.active { background:#22c55e; }
     .modal-backdrop { position:fixed; inset:0; background:rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; z-index:999; }
-    .modal { background:#fff; border-radius:12px; padding:20px; width:100%; max-width:420px; box-shadow:0 20px 60px rgba(0,0,0,0.25); }
+    .modal { background:#fff; border-radius:12px; padding:20px; width:100%; max-width:420px; box-shadow:0 20px 60px rgba(0,0,0,0.25); position:relative; }
     .modal h2 { margin-top:0; margin-bottom:8px; }
     .modal .muted { margin-top:0; margin-bottom:16px; }
     .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:16px; }
+    .modal-close { position:absolute; top:10px; right:10px; border:none; background:transparent; font-size:18px; cursor:pointer; color:#475569; }
+    .modal .stack { flex-direction:column; }
+    .auth-message { margin-top:10px; padding:10px 12px; border-radius:8px; font-size:13px; }
+    .auth-message.success { background:#ecfdf3; color:#166534; border:1px solid #bbf7d0; }
+    .auth-message.error { background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; }
+    .auth-helper { font-size:12px; color:#64748b; margin-top:6px; }
+    .auth-switch { margin-top:12px; font-size:13px; color:#64748b; text-align:center; }
+    .auth-link { color:#0d6efd; font-weight:600; cursor:pointer; }
+    .session-warning { color:#b45309; font-weight:600; }
+    .focus-status { display:flex; align-items:center; gap:8px; margin-top:8px; font-size:13px; }
+    .focus-dot { width:10px; height:10px; border-radius:50%; background:#f59e0b; display:inline-block; }
+    .focus-dot.active { background:#22c55e; }
+    .files-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:8px; flex-wrap:wrap; }
+    .files-controls { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+    .files-summary { font-size:13px; color:var(--muted); }
+    .files-filters { display:flex; gap:8px; flex-wrap:wrap; }
+    .filter-chip { border:none; background:#eef2ff; color:#1d3b8b; padding:6px 12px; border-radius:999px; font-size:12px; font-weight:700; cursor:pointer; }
+    .filter-chip.active { background:#0d6efd; color:#fff; }
+    .icon-btn { width:40px; height:40px; border-radius:12px; border:1px solid var(--border); background:#fff; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 6px 14px rgba(15,23,42,0.08); }
+    .icon-btn:hover { background:#f0f4ff; }
+    .icon-btn svg { width:18px; height:18px; color:#1d3b8b; }
+    .files-list { margin-top:12px; display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:12px; }
+    .file-card { display:grid; grid-template-columns:72px 1fr; gap:12px; padding:12px; border:1px solid var(--border); border-radius:12px; background:#fff; box-shadow:0 6px 18px rgba(15,23,42,0.06); }
+    .file-thumb { width:72px; height:72px; border-radius:12px; background:#eef2ff; border:1px solid #d7def7; display:flex; align-items:center; justify-content:center; overflow:hidden; color:#1d3b8b; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; }
+    .file-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+    .file-content { display:flex; flex-direction:column; gap:6px; }
+    .file-title-row { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .file-name { font-weight:700; color:#0f172a; font-size:14px; }
+    .file-badge { display:inline-flex; align-items:center; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700; background:#e2e8f0; color:#334155; text-transform:uppercase; }
+    .file-sub { font-size:12px; color:#6b7280; line-height:1.4; }
+    .file-meta-row { display:flex; flex-wrap:wrap; gap:8px; font-size:12px; color:#64748b; }
+    .file-skeleton { background:linear-gradient(90deg, #f1f5f9 0%, #e2e8f0 50%, #f1f5f9 100%); background-size:200% 100%; animation:shimmer 1.6s infinite; border:1px solid var(--border); border-radius:12px; height:96px; }
+    @keyframes shimmer { 0% { background-position:200% 0; } 100% { background-position:-200% 0; } }
+    .file-card.locked { grid-template-columns:1fr; text-align:center; padding:24px; color:#64748b; background:#f8fafc; grid-column:1 / -1; min-height:180px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; }
+    .lock-badge { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; background:#e2e8f0; color:#334155; font-size:11px; font-weight:700; margin-bottom:8px; }
+    .lock-icon { width:36px; height:36px; color:#1d3b8b; }
+    .file-card.add { cursor:pointer; background:#f1f5ff; border:1px dashed #9bb7ff; box-shadow:none; justify-items:center; align-items:center; grid-template-columns:1fr; text-align:center; }
+    .file-card.add:hover { background:#e0eaff; }
+    .file-plus { width:48px; height:48px; border-radius:16px; background:#0d6efd; color:#fff; font-size:28px; display:flex; align-items:center; justify-content:center; box-shadow:0 10px 20px rgba(13,110,253,0.3); }
+    .file-actions { display:flex; gap:8px; flex-wrap:wrap; }
+    .btn-link { border:none; background:#eef2ff; color:#1d3b8b; padding:6px 10px; border-radius:8px; cursor:pointer; font-weight:600; font-size:12px; }
+    .preview-backdrop { position:fixed; inset:0; background:rgba(15,23,42,0.7); display:flex; align-items:center; justify-content:center; z-index:1000; }
+    .preview-modal { background:#fff; border-radius:12px; width:min(900px, 92vw); height:min(640px, 86vh); display:flex; flex-direction:column; }
+    .preview-header { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--border); }
+    .preview-body { flex:1; background:#0b1220; display:flex; align-items:center; justify-content:center; }
+    .preview-body iframe, .preview-body img { width:100%; height:100%; border:0; object-fit:contain; }
     .hidden { display:none; }
+    .confirm-modal { background:#fff; border-radius:14px; padding:20px; width:min(420px, 90vw); box-shadow:0 24px 60px rgba(15,23,42,0.25); }
+    .confirm-title { font-size:18px; font-weight:700; margin:0 0 8px; color:#0f172a; }
+    .confirm-text { font-size:14px; color:#475569; margin:0 0 16px; }
+    .confirm-actions { display:flex; justify-content:flex-end; gap:10px; }
   </style>
 </head>
 <body>
@@ -56,18 +107,19 @@
 
       <div class="stack">
         <div class="field">
-          <label for="courseId">Current course ID</label>
-          <input id="courseId" type="number" placeholder="e.g. 1" />
-        </div>
-        <div class="field">
-          <label for="courseName">Course name (optional label)</label>
-          <input id="courseName" type="text" placeholder="Intro to Biology" />
+          <label for="courseSelect">Select course</label>
+          <select id="courseSelect"></select>
+          <button class="secondary pill" id="btn-refresh-courses" style="margin-top:8px;">Refresh courses</button>
         </div>
       </div>
 
       <div class="section">
         <div class="muted">Session controls</div>
         <div class="timer" id="timer">00:00:00</div>
+        <div class="focus-status">
+          <span class="focus-dot" id="focusDot"></span>
+          <span id="focusStatus">Focus: unknown</span>
+        </div>
         <div class="stack">
           <button class="primary" id="btn-start">Start studying</button>
           <button class="secondary" id="btn-end" disabled>End session</button>
@@ -76,11 +128,25 @@
       </div>
 
       <div class="section">
-        <div class="muted">Upload notes / slides</div>
-        <div class="stack">
-          <input type="file" id="fileInput" />
-          <button class="secondary" id="btn-upload">Upload</button>
+        <div class="muted">Course files</div>
+        <div class="files-header">
+          <div class="files-controls">
+            <div class="files-summary" id="filesSummary">Select a course to view files.</div>
+            <div class="files-filters" id="filesFilters">
+              <button class="filter-chip active" data-filter="all" type="button">All</button>
+              <button class="filter-chip" data-filter="pdf" type="button">PDF</button>
+              <button class="filter-chip" data-filter="image" type="button">Images</button>
+            </div>
+          </div>
+          <button class="icon-btn" id="btn-refresh-files" type="button" title="Refresh files" aria-label="Refresh files">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20 11a8 8 0 10-2.34 5.66"/>
+              <path d="M20 4v7h-7"/>
+            </svg>
+          </button>
         </div>
+        <input type="file" id="fileInput" accept="application/pdf,image/*" class="hidden" />
+        <div class="files-list" id="filesList"></div>
       </div>
 
       <div class="section">
@@ -94,26 +160,52 @@
 
   <div id="authModal" class="modal-backdrop hidden">
     <div class="modal">
-      <h2>Login or Register</h2>
-      <p class="muted">Sign in to start sessions and upload files.</p>
+      <button class="modal-close" id="btn-close-auth">x</button>
+      <h2 id="authTitle">Welcome back</h2>
+      <p class="muted" id="authSubtitle">Sign in to start sessions and upload files.</p>
       <div class="stack">
         <div class="field">
           <label for="email">Email</label>
           <input id="email" type="email" placeholder="student@example.edu" />
         </div>
-        <div class="field">
+        <div class="field" id="displayNameField">
           <label for="displayName">Display name</label>
           <input id="displayName" type="text" placeholder="Sample Student" />
         </div>
         <div class="field">
           <label for="password">Password</label>
           <input id="password" type="password" placeholder="Choose a password" />
+          <div class="auth-helper" id="authHelper">Minimum 6 characters.</div>
         </div>
       </div>
+      <div id="authMessage" class="auth-message hidden"></div>
       <div class="modal-actions">
-        <button class="secondary pill" id="btn-close-auth">Close</button>
         <button class="secondary pill" id="btn-login">Login</button>
         <button class="primary pill" id="btn-register">Register</button>
+      </div>
+      <div class="auth-switch" id="authSwitch">
+        New here? <span class="auth-link" id="link-register">Create an account</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="previewModal" class="preview-backdrop hidden">
+    <div class="preview-modal">
+      <div class="preview-header">
+        <div id="previewTitle">Preview</div>
+        <button class="btn-link" id="btn-close-preview">Close</button>
+      </div>
+      <div class="preview-body" id="previewBody"></div>
+    </div>
+  </div>
+
+  <div id="confirmModal" class="modal-backdrop hidden">
+    <div class="confirm-modal">
+      <h3 class="confirm-title">Switch courses?</h3>
+      <p class="confirm-text">Switching ends the current session and starts a new one.</p>
+      <div class="confirm-actions">
+        <button class="secondary pill" id="btn-confirm-cancel">Stay</button>
+        <button class="primary pill" id="btn-confirm-switch">Switch</button>
       </div>
     </div>
   </div>
@@ -125,13 +217,46 @@
   const authStatusEl = document.getElementById('authStatus');
   const authDotEl = document.getElementById('authDot');
   const authModal = document.getElementById('authModal');
+  const focusDotEl = document.getElementById('focusDot');
+  const focusStatusEl = document.getElementById('focusStatus');
+  const courseSelectEl = document.getElementById('courseSelect');
+  const headerAuthButton = document.getElementById('btn-open-auth');
+  const logoutButton = document.getElementById('btn-logout');
+  const displayNameField = document.getElementById('displayNameField');
+  const authTitle = document.getElementById('authTitle');
+  const authSubtitle = document.getElementById('authSubtitle');
+  const authHelper = document.getElementById('authHelper');
+  const authMessage = document.getElementById('authMessage');
+  const authSwitch = document.getElementById('authSwitch');
+  const loginButton = document.getElementById('btn-login');
+  const registerButton = document.getElementById('btn-register');
+  const filesListEl = document.getElementById('filesList');
+  const previewModal = document.getElementById('previewModal');
+  const previewBody = document.getElementById('previewBody');
+  const previewTitle = document.getElementById('previewTitle');
+  const confirmModal = document.getElementById('confirmModal');
+  const confirmCancelButton = document.getElementById('btn-confirm-cancel');
+  const confirmSwitchButton = document.getElementById('btn-confirm-switch');
+  const uploadInput = document.getElementById('fileInput');
+  const refreshFilesButton = document.getElementById('btn-refresh-files');
+  const filesSummaryEl = document.getElementById('filesSummary');
+  const filesFiltersEl = document.getElementById('filesFilters');
+  let previewUrl = null;
   let timerInterval = null;
   let startTime = null;
   let accumulatedMs = 0;
   let activeSessionId = null;
+  let activeCourseId = null;
   let authToken = localStorage.getItem('cc_jwt') || null;
+  let seededCourses = false;
+  let thumbObserver = null;
+  let activeThumbUrls = [];
+  let allFiles = [];
+  let fileFilter = 'all';
+  let isSwitchingCourse = false;
 
   updateAuthStatus();
+  setAuthMode('login');
 
   function log(message, data) {
     const ts = new Date().toLocaleTimeString();
@@ -196,37 +321,649 @@
     }
   }
 
+  async function fetchBlob(path) {
+    const headers = {};
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+    const res = await fetch(path, { headers });
+    if (!res.ok) {
+      log(`GET ${path} (${res.status})`, await res.text());
+      return null;
+    }
+    return await res.blob();
+  }
+
+  function formatBytes(bytes) {
+    if (!bytes && bytes !== 0) {
+      return '';
+    }
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let size = bytes;
+    let unit = 0;
+    while (size >= 1024 && unit < units.length - 1) {
+      size /= 1024;
+      unit += 1;
+    }
+    return `${size.toFixed(size >= 10 || unit === 0 ? 0 : 1)} ${units[unit]}`;
+  }
+
+  function formatRelativeTime(isoDate) {
+    if (!isoDate) {
+      return 'unknown';
+    }
+    const ts = Date.parse(isoDate);
+    if (Number.isNaN(ts)) {
+      return 'unknown';
+    }
+    const diffMs = Date.now() - ts;
+    const diffSeconds = Math.max(0, Math.floor(diffMs / 1000));
+    if (diffSeconds < 30) return 'just now';
+    if (diffSeconds < 90) return '1 min ago';
+    const diffMinutes = Math.floor(diffSeconds / 60);
+    if (diffMinutes < 60) return `${diffMinutes} mins ago`;
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return `${diffHours} hrs ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays === 1) return '1 day ago';
+    return `${diffDays} days ago`;
+  }
+
+  function cleanFileName(name) {
+    if (!name) {
+      return 'Untitled';
+    }
+    const base = name.replace(/\.[^/.]+$/, '').replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!base) {
+      return name;
+    }
+    return base.replace(/\b\w/g, (char) => char.toUpperCase());
+  }
+
+  function getFileTypeLabel(file) {
+    const name = (file.originalFilename || '').toLowerCase();
+    const type = (file.contentType || '').toLowerCase();
+    if (type.includes('pdf') || name.endsWith('.pdf')) return 'PDF';
+    if (type.startsWith('image/') || name.match(/\.(png|jpe?g|gif|webp)$/)) return 'Image';
+    if (type.includes('presentation') || name.match(/\.(ppt|pptx)$/)) return 'Slides';
+    if (type.includes('spreadsheet') || name.match(/\.(xls|xlsx|csv)$/)) return 'Sheet';
+    if (type.includes('word') || name.match(/\.(doc|docx)$/)) return 'Doc';
+    if (type.includes('zip') || name.match(/\.(zip|rar|7z)$/)) return 'Zip';
+    if (type.startsWith('text/') || name.match(/\.(txt|md)$/)) return 'Text';
+    return 'File';
+  }
+
+  function resetThumbObserver() {
+    if (thumbObserver) {
+      thumbObserver.disconnect();
+    }
+    activeThumbUrls.forEach((url) => URL.revokeObjectURL(url));
+    activeThumbUrls = [];
+    thumbObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach(async (entry) => {
+        if (!entry.isIntersecting) return;
+        const img = entry.target;
+        observer.unobserve(img);
+        const courseId = Number(img.dataset.courseId);
+        const fileId = Number(img.dataset.fileId);
+        const blob = await fetchBlob(`/api/courses/${courseId}/files/${fileId}/preview`);
+        if (!blob) {
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        activeThumbUrls.push(url);
+        img.src = url;
+      });
+    }, { rootMargin: '160px' });
+  }
+
+  function renderFileSkeleton(count) {
+    filesListEl.innerHTML = '';
+    for (let i = 0; i < count; i += 1) {
+      const card = document.createElement('div');
+      card.className = 'file-skeleton';
+      filesListEl.appendChild(card);
+    }
+  }
+
+  function renderLockedFiles(message, subtext) {
+    filesListEl.innerHTML = '';
+    const card = document.createElement('div');
+    card.className = 'file-card locked';
+    const icon = document.createElement('div');
+    icon.className = 'lock-icon';
+    icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 11V8a5 5 0 0110 0v3"/><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M12 15v2"/></svg>';
+    const badge = document.createElement('div');
+    badge.className = 'lock-badge';
+    badge.textContent = 'LOCKED';
+    const title = document.createElement('div');
+    title.className = 'file-name';
+    title.textContent = message;
+    const detail = document.createElement('div');
+    detail.className = 'file-sub';
+    detail.textContent = subtext || '';
+    card.appendChild(icon);
+    card.appendChild(badge);
+    card.appendChild(title);
+    if (subtext) {
+      card.appendChild(detail);
+    }
+    filesListEl.appendChild(card);
+  }
+
+  function createAddCard() {
+    const card = document.createElement('div');
+    card.className = 'file-card add';
+    const plus = document.createElement('div');
+    plus.className = 'file-plus';
+    plus.textContent = '+';
+    const label = document.createElement('div');
+    label.className = 'file-name';
+    label.textContent = 'Upload file';
+    const hint = document.createElement('div');
+    hint.className = 'file-sub';
+    hint.textContent = 'PDF or image only';
+    card.appendChild(plus);
+    card.appendChild(label);
+    card.appendChild(hint);
+    card.addEventListener('click', () => {
+      if (!authToken) {
+        showAuthModal();
+        return;
+      }
+      if (!courseSelectEl.value) {
+        filesSummaryEl.textContent = 'Select a course to upload.';
+        return;
+      }
+      uploadInput.click();
+    });
+    return card;
+  }
+
+  function filterFiles(files) {
+    if (fileFilter === 'pdf') {
+      return files.filter((file) => getFileTypeLabel(file) === 'PDF');
+    }
+    if (fileFilter === 'image') {
+      return files.filter((file) => getFileTypeLabel(file) === 'Image');
+    }
+    return files;
+  }
+
+  function renderFileGrid(files, courseId) {
+    filesListEl.innerHTML = '';
+    filesListEl.appendChild(createAddCard());
+    if (!files.length) {
+      const emptyCard = document.createElement('div');
+      emptyCard.className = 'file-card locked';
+      const emptyTitle = document.createElement('div');
+      emptyTitle.className = 'file-name';
+      emptyTitle.textContent = 'No matching files';
+      const emptySub = document.createElement('div');
+      emptySub.className = 'file-sub';
+      emptySub.textContent = 'Try a different filter or upload a new file.';
+      emptyCard.appendChild(emptyTitle);
+      emptyCard.appendChild(emptySub);
+      filesListEl.appendChild(emptyCard);
+      return;
+    }
+    files.forEach((file) => {
+      const card = document.createElement('div');
+      card.className = 'file-card';
+
+      const thumb = document.createElement('div');
+      thumb.className = 'file-thumb';
+      const typeLabel = getFileTypeLabel(file);
+      if (file.contentType && file.contentType.startsWith('image/')) {
+        const img = document.createElement('img');
+        img.alt = file.originalFilename || 'Preview';
+        img.loading = 'lazy';
+        img.dataset.courseId = String(courseId);
+        img.dataset.fileId = String(file.id);
+        thumb.appendChild(img);
+        thumbObserver.observe(img);
+      } else {
+        thumb.textContent = typeLabel;
+      }
+
+      const content = document.createElement('div');
+      content.className = 'file-content';
+
+      const titleRow = document.createElement('div');
+      titleRow.className = 'file-title-row';
+      const name = document.createElement('div');
+      name.className = 'file-name';
+      name.textContent = cleanFileName(file.originalFilename);
+      const badge = document.createElement('div');
+      badge.className = 'file-badge';
+      badge.textContent = typeLabel;
+      titleRow.appendChild(name);
+      titleRow.appendChild(badge);
+
+      const meta = document.createElement('div');
+      meta.className = 'file-sub';
+      meta.textContent = file.originalFilename || 'Untitled';
+
+      const metaRow = document.createElement('div');
+      metaRow.className = 'file-meta-row';
+      const sizeText = formatBytes(file.sizeBytes);
+      const timeText = file.uploadedAt ? formatRelativeTime(file.uploadedAt) : '';
+      const uploader = file.uploaderDisplayName || file.uploaderEmail || '';
+      const uploaderLabel = uploader ? `by ${uploader}` : '';
+      [sizeText, timeText, uploaderLabel].filter(Boolean).forEach((item) => {
+        const span = document.createElement('span');
+        span.textContent = item;
+        metaRow.appendChild(span);
+      });
+
+      const actions = document.createElement('div');
+      actions.className = 'file-actions';
+      const download = document.createElement('button');
+      download.className = 'btn-link';
+      download.textContent = 'Download';
+      download.addEventListener('click', () => downloadFile(courseId, file));
+      actions.appendChild(download);
+
+      if (file.contentType && (file.contentType.startsWith('image/') || file.contentType === 'application/pdf')) {
+        const preview = document.createElement('button');
+        preview.className = 'btn-link';
+        preview.textContent = 'Preview';
+        preview.addEventListener('click', () => openPreview(courseId, file));
+        actions.appendChild(preview);
+      }
+
+      content.appendChild(titleRow);
+      content.appendChild(meta);
+      content.appendChild(metaRow);
+      content.appendChild(actions);
+
+      card.appendChild(thumb);
+      card.appendChild(content);
+      filesListEl.appendChild(card);
+    });
+  }
+
+  function isAllowedUpload(file) {
+    if (!file) {
+      return false;
+    }
+    const type = (file.type || '').toLowerCase();
+    const name = (file.name || '').toLowerCase();
+    if (type.startsWith('image/') || type === 'application/pdf') {
+      return true;
+    }
+    return Boolean(name.match(/\.(pdf|png|jpe?g|gif|webp)$/));
+  }
+
+  async function uploadSelectedFile(file) {
+    const courseId = Number(courseSelectEl.value);
+    if (!courseId) {
+      log('uploadFile', 'Provide a course ID');
+      return;
+    }
+    if (!isAllowedUpload(file)) {
+      filesSummaryEl.textContent = 'Only PDF or image files are allowed.';
+      log('uploadFile', 'Only PDF or image files are allowed.');
+      uploadInput.value = '';
+      return;
+    }
+    const form = new FormData();
+    form.append('file', file);
+    await callApi(`/api/courses/${courseId}/files`, {
+      method: 'POST',
+      body: form
+    });
+    uploadInput.value = '';
+    fetchFiles();
+  }
+
   function updateAuthStatus() {
     if (authToken) {
       authStatusEl.textContent = 'Authenticated (token stored locally).';
       authDotEl.classList.add('active');
+      headerAuthButton.classList.add('hidden');
+      logoutButton.classList.remove('hidden');
     } else {
       authStatusEl.textContent = 'Not authenticated.';
       authDotEl.classList.remove('active');
+      headerAuthButton.classList.remove('hidden');
+      logoutButton.classList.add('hidden');
     }
+    toggleFileControls();
+  }
+
+  function toggleFileControls() {
+    const enabled = Boolean(authToken);
+    uploadInput.disabled = !enabled;
+    refreshFilesButton.disabled = !enabled;
   }
 
   function showAuthModal() {
     authModal.classList.remove('hidden');
+    setAuthMode('login');
   }
 
   function hideAuthModal() {
     authModal.classList.add('hidden');
   }
 
-  document.getElementById('btn-start').addEventListener('click', async () => {
-    const courseId = Number(document.getElementById('courseId').value);
-    if (!courseId) {
-      log('startSession', 'Provide a course ID');
+  function setAuthMode(mode) {
+    const isRegister = mode === 'register';
+    displayNameField.classList.toggle('hidden', !isRegister);
+    authTitle.textContent = isRegister ? 'Create your account' : 'Welcome back';
+    authSubtitle.textContent = isRegister
+      ? 'Create an account to start sessions and upload files.'
+      : 'Sign in to start sessions and upload files.';
+    authHelper.textContent = isRegister ? 'Minimum 6 characters.' : 'Enter your password to sign in.';
+    authMessage.classList.add('hidden');
+    authMessage.textContent = '';
+    authSwitch.innerHTML = isRegister
+      ? 'Already have an account? <span class="auth-link" id="link-login">Sign in</span>'
+      : 'New here? <span class="auth-link" id="link-register">Create an account</span>';
+    const swapLink = document.getElementById(isRegister ? 'link-login' : 'link-register');
+    swapLink.addEventListener('click', () => setAuthMode(isRegister ? 'login' : 'register'));
+    loginButton.classList.toggle('hidden', isRegister);
+    registerButton.classList.toggle('hidden', !isRegister);
+  }
+
+  async function fetchCourses() {
+    const resp = await callApi('/api/courses');
+    if (!resp.ok || !Array.isArray(resp.body)) {
+      courseSelectEl.innerHTML = '<option value="">Login to load courses</option>';
       return;
     }
+    if (resp.body.length === 0 && authToken && !seededCourses) {
+      await seedSampleCourses();
+      return;
+    }
+    courseSelectEl.innerHTML = '<option value="">Select a course</option>';
+    resp.body.forEach((course) => {
+      const option = document.createElement('option');
+      option.value = course.id;
+      option.textContent = `${course.code} - ${course.name}${course.term ? ' (' + course.term + ')' : ''}`;
+      courseSelectEl.appendChild(option);
+    });
+  }
+
+  async function fetchFiles() {
+    resetThumbObserver();
+    if (!authToken) {
+      allFiles = [];
+      filesSummaryEl.textContent = 'Login required to view course files.';
+      renderLockedFiles('Login required', 'Sign in to view and download course files.');
+      return;
+    }
+    const courseId = Number(courseSelectEl.value);
+    if (!courseId) {
+      allFiles = [];
+      filesSummaryEl.textContent = 'Select a course to view files.';
+      renderLockedFiles('Course files are locked', 'Pick a course to unlock shared resources.');
+      return;
+    }
+    filesSummaryEl.textContent = 'Loading files...';
+    renderFileSkeleton(6);
+    const resp = await callApi(`/api/courses/${courseId}/files`);
+    if (!resp.ok || !Array.isArray(resp.body)) {
+      filesSummaryEl.textContent = 'Unable to load files.';
+      filesListEl.innerHTML = '<div class="file-card"><div class="file-content"><div class="file-name">No files loaded</div></div></div>';
+      return;
+    }
+    if (resp.body.length === 0) {
+      filesSummaryEl.textContent = '0 files | last upload -';
+      filesListEl.innerHTML = '';
+      filesListEl.appendChild(createAddCard());
+      const emptyCard = document.createElement('div');
+      emptyCard.className = 'file-card locked';
+      const emptyTitle = document.createElement('div');
+      emptyTitle.className = 'file-name';
+      emptyTitle.textContent = 'No files yet';
+      const emptySub = document.createElement('div');
+      emptySub.className = 'file-sub';
+      emptySub.textContent = 'Upload the first resource for this course.';
+      emptyCard.appendChild(emptyTitle);
+      emptyCard.appendChild(emptySub);
+      filesListEl.appendChild(emptyCard);
+      return;
+    }
+    const lastUploadTs = resp.body.reduce((latest, file) => {
+      const ts = file.uploadedAt ? Date.parse(file.uploadedAt) : NaN;
+      if (Number.isNaN(ts)) {
+        return latest;
+      }
+      return Math.max(latest, ts);
+    }, 0);
+    const lastUploadLabel = lastUploadTs ? formatRelativeTime(new Date(lastUploadTs).toISOString()) : 'unknown';
+    filesSummaryEl.textContent = `${resp.body.length} files | last upload ${lastUploadLabel}`;
+    allFiles = resp.body;
+    renderFileGrid(filterFiles(allFiles), courseId);
+  }
+
+  async function openPreview(courseId, file) {
+    previewTitle.textContent = file.originalFilename || 'Preview';
+    previewBody.innerHTML = '';
+    const blob = await fetchBlob(`/api/courses/${courseId}/files/${file.id}/preview`);
+    if (!blob) {
+      return;
+    }
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    previewUrl = URL.createObjectURL(blob);
+    if (file.contentType && file.contentType.startsWith('image/')) {
+      const img = document.createElement('img');
+      img.src = previewUrl;
+      img.alt = file.originalFilename || 'Preview';
+      previewBody.appendChild(img);
+    } else {
+      const frame = document.createElement('iframe');
+      frame.src = previewUrl;
+      previewBody.appendChild(frame);
+    }
+    previewModal.classList.remove('hidden');
+  }
+
+  function closePreview() {
+    previewModal.classList.add('hidden');
+    previewBody.innerHTML = '';
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      previewUrl = null;
+    }
+  }
+
+  async function downloadFile(courseId, file) {
+    const blob = await fetchBlob(`/api/courses/${courseId}/files/${file.id}/download`);
+    if (!blob) {
+      return;
+    }
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = file.originalFilename || 'course-file';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  async function seedSampleCourses() {
+    if (seededCourses) {
+      return;
+    }
+    seededCourses = true;
+    const samples = [
+      { code: 'CSE8A', name: 'Introduction to Programming I (Java)', term: 'Fall 2025' },
+      { code: 'CSE11', name: 'Introduction to Programming II', term: 'Winter 2026' },
+      { code: 'CSE12', name: 'Basic Data Structures & OO Design', term: 'Fall 2025' },
+      { code: 'CSE30', name: 'Computer Organization & Systems Programming', term: 'Spring 2026' },
+      { code: 'CSE100', name: 'Advanced Data Structures', term: 'Spring 2026' },
+      { code: 'CSE101', name: 'Design & Analysis of Algorithms', term: 'Spring 2026' },
+      { code: 'CSE110', name: 'Software Engineering', term: 'Winter 2026' },
+      { code: 'CSE120', name: 'Operating Systems', term: 'Fall 2025' },
+      { code: 'CSE140', name: 'Digital Systems Components & Design', term: 'Winter 2026' }
+    ];
+    for (const course of samples) {
+      await callApi('/api/courses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(course)
+      });
+    }
+    await fetchCourses();
+  }
+
+  async function fetchActiveSession() {
+    const resp = await callApi('/api/sessions/active');
+    if (resp.status === 204 || !resp.ok || !resp.body || !resp.body.id) {
+      await fallbackFetchActiveSession();
+      return;
+    }
+    activeSessionId = resp.body.id;
+    activeCourseId = resp.body.courseId || null;
+    const startedAt = resp.body.startedAt ? Date.parse(resp.body.startedAt) : null;
+    if (startedAt) {
+      accumulatedMs = Date.now() - startedAt;
+      timerEl.textContent = formatDuration(accumulatedMs);
+    }
+    if (resp.body.courseId) {
+      courseSelectEl.value = String(resp.body.courseId);
+    }
+    statusEl.textContent = `Active session for course ${resp.body.courseId} (id ${activeSessionId})`;
+    document.getElementById('btn-start').disabled = true;
+    document.getElementById('btn-end').disabled = false;
+    startTimer();
+  }
+
+  async function fallbackFetchActiveSession() {
+    const resp = await callApi('/api/sessions');
+    if (!resp.ok || !Array.isArray(resp.body)) {
+      resetSessionUi();
+      return;
+    }
+    const active = resp.body.find((session) => !session.endedAt);
+    if (!active || !active.id) {
+      resetSessionUi();
+      return;
+    }
+    activeSessionId = active.id;
+    activeCourseId = active.courseId || null;
+    const startedAt = active.startedAt ? Date.parse(active.startedAt) : null;
+    if (startedAt) {
+      accumulatedMs = Date.now() - startedAt;
+      timerEl.textContent = formatDuration(accumulatedMs);
+    }
+    if (active.courseId) {
+      courseSelectEl.value = String(active.courseId);
+    }
+    statusEl.textContent = `Active session for course ${active.courseId} (id ${activeSessionId})`;
+    document.getElementById('btn-start').disabled = true;
+    document.getElementById('btn-end').disabled = false;
+    startTimer();
+  }
+
+  function resetSessionUi() {
+    activeSessionId = null;
+    activeCourseId = null;
+    stopTimer();
+    accumulatedMs = 0;
+    timerEl.textContent = '00:00:00';
+    statusEl.textContent = 'No active session.';
+    statusEl.classList.remove('session-warning');
+    document.getElementById('btn-start').disabled = false;
+    document.getElementById('btn-end').disabled = true;
+  }
+
+  function confirmCourseSwitch() {
+    return new Promise((resolve) => {
+      confirmModal.classList.remove('hidden');
+      const handleCancel = () => {
+        confirmModal.classList.add('hidden');
+        cleanup();
+        resolve(false);
+      };
+      const handleSwitch = () => {
+        confirmModal.classList.add('hidden');
+        cleanup();
+        resolve(true);
+      };
+      function cleanup() {
+        confirmCancelButton.removeEventListener('click', handleCancel);
+        confirmSwitchButton.removeEventListener('click', handleSwitch);
+      }
+      confirmCancelButton.addEventListener('click', handleCancel);
+      confirmSwitchButton.addEventListener('click', handleSwitch);
+    });
+  }
+
+  async function handleCourseChange() {
+    if (isSwitchingCourse) {
+      return;
+    }
+    const selectedCourseId = Number(courseSelectEl.value);
+    if (!activeSessionId || !activeCourseId || !selectedCourseId || selectedCourseId === activeCourseId) {
+      fetchFiles();
+      return;
+    }
+    const previousCourseId = activeCourseId;
+    const confirmed = await confirmCourseSwitch();
+    if (!confirmed) {
+      isSwitchingCourse = true;
+      courseSelectEl.value = String(previousCourseId);
+      isSwitchingCourse = false;
+      fetchFiles();
+      return;
+    }
+    statusEl.textContent = 'Switching sessions...';
+    const endResp = await callApi(`/api/sessions/${activeSessionId}/end`, { method: 'PATCH' });
+    if (!endResp.ok) {
+      statusEl.textContent = 'Unable to end current session.';
+      courseSelectEl.value = String(previousCourseId);
+      fetchFiles();
+      return;
+    }
+    const startResp = await callApi('/api/sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ courseId: selectedCourseId })
+    });
+    if (!startResp.ok) {
+      statusEl.textContent = 'Unable to start a new session.';
+      courseSelectEl.value = String(previousCourseId);
+      fetchFiles();
+      return;
+    }
+    activeSessionId = startResp.body.id;
+    activeCourseId = selectedCourseId;
+    accumulatedMs = 0;
+    startTimer();
+    statusEl.textContent = `Active session for course ${selectedCourseId} (id ${activeSessionId})`;
+    document.getElementById('btn-start').disabled = true;
+    document.getElementById('btn-end').disabled = false;
+    fetchFiles();
+  }
+
+  document.getElementById('btn-start').addEventListener('click', async () => {
+    const courseId = Number(courseSelectEl.value);
+    if (!courseId) {
+      log('startSession', 'Provide a course ID');
+      statusEl.textContent = 'Select a course before starting.';
+      statusEl.classList.add('session-warning');
+      return;
+    }
+    statusEl.classList.remove('session-warning');
     const resp = await callApi('/api/sessions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ courseId })
     });
+    if (resp.status === 409) {
+      log('startSession', 'Active session found. Resuming it now.');
+      await fetchActiveSession();
+      return;
+    }
     if (resp.ok) {
       activeSessionId = resp.body.id;
+      activeCourseId = courseId;
       statusEl.textContent = `Active session for course ${courseId} (id ${activeSessionId})`;
       document.getElementById('btn-start').disabled = true;
       document.getElementById('btn-end').disabled = false;
@@ -249,49 +986,40 @@
       stopTimer();
       timerEl.textContent = '00:00:00';
       activeSessionId = null;
+      activeCourseId = null;
     }
   });
 
-  document.getElementById('btn-upload').addEventListener('click', async () => {
-    const courseId = Number(document.getElementById('courseId').value);
-    const fileInput = document.getElementById('fileInput');
-    if (!courseId) {
-      log('uploadFile', 'Provide a course ID');
-      return;
-    }
-    if (!fileInput.files.length) {
-      log('uploadFile', 'Choose a file first');
-      return;
-    }
-    const form = new FormData();
-    form.append('file', fileInput.files[0]);
-    await callApi(`/api/courses/${courseId}/files`, {
-      method: 'POST',
-      body: form
-    });
-  });
 
   function handleVisibilityChange() {
     const state = document.visibilityState;
     log('visibilitychange', state);
     if (state === 'hidden') {
       pauseTimer();
+      focusStatusEl.textContent = 'Focus: hidden';
+      focusDotEl.classList.remove('active');
     } else if (state === 'visible') {
       resumeTimerIfActive();
+      focusStatusEl.textContent = 'Focus: visible';
+      focusDotEl.classList.add('active');
     }
   }
 
   function handleFocus() {
     log('focus');
     resumeTimerIfActive();
+    focusStatusEl.textContent = 'Focus: focused';
+    focusDotEl.classList.add('active');
   }
 
   function handleBlur() {
     log('blur');
     pauseTimer();
+    focusStatusEl.textContent = 'Focus: blurred';
+    focusDotEl.classList.remove('active');
   }
 
-  document.getElementById('btn-register').addEventListener('click', async () => {
+  registerButton.addEventListener('click', async () => {
     const email = document.getElementById('email').value.trim();
     const displayName = document.getElementById('displayName').value.trim();
     const password = document.getElementById('password').value;
@@ -308,11 +1036,22 @@
       authToken = resp.body.token;
       localStorage.setItem('cc_jwt', authToken);
       updateAuthStatus();
-      hideAuthModal();
+      fetchCourses();
+      fetchActiveSession();
+      authMessage.className = 'auth-message success';
+      authMessage.textContent = 'Account created. You are signed in.';
+      authMessage.classList.remove('hidden');
+      log('auth', 'Registered and signed in');
+      setTimeout(hideAuthModal, 800);
+    }
+    if (!resp.ok) {
+      authMessage.className = 'auth-message error';
+      authMessage.textContent = 'Registration failed. Try a different email.';
+      authMessage.classList.remove('hidden');
     }
   });
 
-  document.getElementById('btn-login').addEventListener('click', async () => {
+  loginButton.addEventListener('click', async () => {
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
     if (!email || !password) {
@@ -328,25 +1067,83 @@
       authToken = resp.body.token;
       localStorage.setItem('cc_jwt', authToken);
       updateAuthStatus();
-      hideAuthModal();
+      fetchCourses();
+      fetchActiveSession();
+      authMessage.className = 'auth-message success';
+      authMessage.textContent = 'Signed in successfully.';
+      authMessage.classList.remove('hidden');
+      log('auth', 'Signed in');
+      setTimeout(hideAuthModal, 800);
+    }
+    if (!resp.ok) {
+      authMessage.className = 'auth-message error';
+      authMessage.textContent = 'Login failed. Check your email and password.';
+      authMessage.classList.remove('hidden');
     }
   });
 
-  document.getElementById('btn-logout').addEventListener('click', () => {
+  logoutButton.addEventListener('click', async () => {
+    await callApi('/api/sessions/end-all', { method: 'POST' });
     authToken = null;
     localStorage.removeItem('cc_jwt');
     updateAuthStatus();
     log('logout', 'Token cleared locally');
+    activeSessionId = null;
+    activeCourseId = null;
+    stopTimer();
+    timerEl.textContent = '00:00:00';
+    statusEl.textContent = 'No active session.';
+    statusEl.classList.remove('session-warning');
+    fetchCourses();
+    fetchFiles();
   });
 
   document.getElementById('btn-open-auth').addEventListener('click', showAuthModal);
   document.getElementById('btn-close-auth').addEventListener('click', hideAuthModal);
+  document.getElementById('btn-refresh-courses').addEventListener('click', fetchCourses);
+  document.getElementById('btn-refresh-files').addEventListener('click', fetchFiles);
+  uploadInput.addEventListener('change', () => {
+    if (uploadInput.files.length) {
+      uploadSelectedFile(uploadInput.files[0]);
+    }
+  });
+  confirmModal.addEventListener('click', (event) => {
+    if (event.target === confirmModal) {
+      confirmModal.classList.add('hidden');
+    }
+  });
+  filesFiltersEl.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!target.classList.contains('filter-chip')) {
+      return;
+    }
+    fileFilter = target.dataset.filter || 'all';
+    filesFiltersEl.querySelectorAll('.filter-chip').forEach((chip) => {
+      chip.classList.toggle('active', chip === target);
+    });
+    if (authToken && courseSelectEl.value) {
+      renderFileGrid(filterFiles(allFiles), Number(courseSelectEl.value));
+    }
+  });
+  document.getElementById('btn-close-preview').addEventListener('click', closePreview);
+  courseSelectEl.addEventListener('change', handleCourseChange);
 
   document.addEventListener('visibilitychange', handleVisibilityChange);
   window.addEventListener('focus', handleFocus);
   window.addEventListener('blur', handleBlur);
 
   log('Student dashboard loaded. Provide a course ID to begin.');
+  focusStatusEl.textContent = document.hasFocus() ? 'Focus: focused' : 'Focus: blurred';
+  focusDotEl.classList.toggle('active', document.hasFocus());
+  fetchCourses();
+  fetchFiles();
+  if (authToken) {
+    fetchActiveSession();
+  }
 </script>
 </body>
 </html>
+
+
+
+
